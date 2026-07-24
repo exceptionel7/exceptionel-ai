@@ -86,6 +86,8 @@ async function handleChat(body) {
       session.claudeMessages = result.messages;
       source = "claude";
     } catch (e) {
+      // Trace visible dans les logs Vercel pour diagnostiquer l'échec Claude.
+      console.error("[Exceptionel][Claude] appel échoué, repli hors-ligne →", e && e.message);
       result = rec.respond(session, message, catalog);
       source = "offline-fallback";
     }
