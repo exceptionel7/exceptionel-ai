@@ -22,6 +22,23 @@ const https = require("https");
 const fs = require("fs");
 const path = require("path");
 
+// Charge un fichier .env local s'il existe (zéro dépendance). Le .env n'est
+// JAMAIS versionné (voir .gitignore).
+(function loadEnv() {
+  try {
+    const content = fs.readFileSync(path.join(__dirname, ".env"), "utf8");
+    content.split(/\r?\n/).forEach((line) => {
+      const m = line.match(/^\s*([A-Za-z0-9_]+)\s*=\s*(.*)\s*$/);
+      if (!m || line.trim().startsWith("#")) return;
+      let val = m[2].trim();
+      if (/^(".*"|'.*')$/.test(val)) val = val.slice(1, -1);
+      if (!(m[1] in process.env)) process.env[m[1]] = val;
+    });
+  } catch (e) {
+    /* pas de .env : on continue avec les variables d'environnement système */
+  }
+})();
+
 const PORT = process.env.PORT || 3000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";

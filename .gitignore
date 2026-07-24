@@ -1,0 +1,12 @@
+# Secrets — NE JAMAIS versionner
+.env
+.env.local
+*.env
+!.env.example
+
+# Dépendances
+node_modules/
+
+# Logs & divers
+*.log
+.DS_Store
