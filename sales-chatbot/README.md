@@ -104,12 +104,45 @@ Le chatbot répond à partir d'un catalogue JSON. Formats acceptés par produit 
 
 ---
 
+## ▲ Déployer sur Vercel
+
+Vercel n'exécute pas de serveur permanent : il utilise des **fonctions
+serverless**. Ce projet est compatible grâce au dossier `api/` (la logique est
+partagée avec `server.js` via `lib/engine.js`).
+
+Réglages du projet Vercel :
+
+1. **Root Directory** = `sales-chatbot` *(important : le code du chatbot est dans ce sous-dossier)*
+2. **Framework Preset** = `Other` (aucun build nécessaire)
+3. **Environment Variables** → ajouter :
+   - `ANTHROPIC_API_KEY` = votre clé `sk-ant-...`
+   - *(optionnel)* `ANTHROPIC_MODEL` = `claude-sonnet-4-20250514`
+4. **Redéployer** après avoir ajouté la variable.
+
+Vérification : ouvrez `https://votre-app.vercel.app/api/health` → doit afficher
+`"mode":"claude"`. La boutique de démo est servie à la racine `/`.
+
+- `api/[...path].js` : une fonction unique qui gère `/api/chat`, `/api/config`,
+  `/api/leads`, `/api/health` (état partagé au sein d'une instance).
+- `vercel.json` : sert la démo (`/demo/index.html`) sur `/`.
+
+> ⚠️ En serverless, l'état en mémoire (sessions, leads) n'est pas garanti
+> persistant entre les instances / démarrages à froid. Suffisant pour une démo ;
+> la production doit brancher PostgreSQL/Redis (voir `../ARCHITECTURE.md`).
+
+> 💡 Besoin d'un serveur permanent (état partagé, WebSockets) ? **Render**,
+> **Railway** ou **Fly.io** lancent directement `node server.js` sans adaptation.
+
 ## 🗂️ Structure
 
 ```
 sales-chatbot/
-├── server.js               Backend zéro-dépendance (routes, sessions, bascule IA)
+├── server.js               Serveur Node classique (local, Render, Railway…)
+├── vercel.json             Config Vercel (sert la démo à la racine)
+├── api/
+│   └── [...path].js        Fonction serverless Vercel (attrape-tout)
 ├── lib/
+│   ├── engine.js           Logique métier partagée (chat, leads, config)
 │   ├── recommender.js      Moteur de vente hors-ligne (recherche, objections, leads)
 │   └── claude.js           Client Claude + function calling (natif https)
 ├── public/
