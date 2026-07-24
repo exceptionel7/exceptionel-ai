@@ -1,13 +1,10 @@
 /*
- * api/[...path].js — Fonction serverless Vercel (attrape-tout) du chatbot.
+ * api/index.js — Fonction serverless Vercel (unique) du chatbot de vente.
  *
- * Vercel déploie tout fichier de /api comme une fonction serverless. Ce fichier
- * capture /api/chat, /api/config, /api/leads, /api/health dans UNE seule
- * fonction, afin de partager l'état en mémoire au sein d'une même instance.
- *
- * La logique métier vit dans lib/engine.js (partagée avec server.js).
- * La clé est lue depuis process.env.ANTHROPIC_API_KEY (variable d'environnement
- * définie dans le tableau de bord Vercel — jamais dans le code).
+ * vercel.json route toutes les requêtes /api/* vers cette fonction, en passant
+ * le sous-chemin dans le paramètre ?__path=... (ex : /api/chat → __path=chat).
+ * On gère ici chat / config / leads / health, avec état partagé au sein d'une
+ * même instance. La logique métier vit dans lib/engine.js.
  */
 
 const engine = require("../lib/engine");
@@ -24,7 +21,6 @@ function json(res, code, obj) {
   res.end(JSON.stringify(obj));
 }
 
-// Récupère le corps JSON, que Vercel l'ait déjà parsé (req.body) ou non.
 function readBody(req) {
   return new Promise((resolve) => {
     if (req.body && typeof req.body === "object") return resolve(req.body);
@@ -49,28 +45,31 @@ function readBody(req) {
 
 module.exports = async (req, res) => {
   setCors(res);
-
   if (req.method === "OPTIONS") {
     res.statusCode = 204;
     return res.end();
   }
 
-  const urlPath = String(req.url || "").split("?")[0];
+  // Sous-chemin : d'abord via ?__path= (fourni par le rewrite vercel.json),
+  // sinon en repli depuis l'URL brute.
+  const q = (req.query && req.query.__path) || "";
+  const raw = String(req.url || "").split("?")[0];
+  const route = (q || raw).toLowerCase();
 
   try {
-    if (req.method === "POST" && urlPath.endsWith("/chat")) {
+    if (req.method === "POST" && route.includes("chat")) {
       return json(res, 200, await engine.handleChat(await readBody(req)));
     }
-    if (req.method === "POST" && urlPath.endsWith("/config")) {
+    if (req.method === "POST" && route.includes("config")) {
       return json(res, 200, engine.setConfig(await readBody(req)));
     }
-    if (req.method === "GET" && urlPath.endsWith("/leads")) {
+    if (req.method === "GET" && route.includes("leads")) {
       return json(res, 200, engine.getLeads());
     }
-    if (req.method === "GET" && urlPath.endsWith("/health")) {
+    if (req.method === "GET" && route.includes("health")) {
       return json(res, 200, engine.health());
     }
-    return json(res, 404, { error: "not_found", path: urlPath });
+    return json(res, 404, { error: "not_found", route });
   } catch (e) {
     return json(res, 500, { error: e.message });
   }

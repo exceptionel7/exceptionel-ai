@@ -122,9 +122,11 @@ Réglages du projet Vercel :
 Vérification : ouvrez `https://votre-app.vercel.app/api/health` → doit afficher
 `"mode":"claude"`. La boutique de démo est servie à la racine `/`.
 
-- `api/[...path].js` : une fonction unique qui gère `/api/chat`, `/api/config`,
+- `api/index.js` : une fonction unique qui gère `/api/chat`, `/api/config`,
   `/api/leads`, `/api/health` (état partagé au sein d'une instance).
-- `index.html` (à la racine) : la boutique de démo, servie automatiquement sur `/`.
+- `vercel.json` : déclare explicitement les fichiers statiques (`index.html`,
+  `public/`, `demo/`) et la fonction, et route `/api/*` vers `api/index.js`.
+- `index.html` (à la racine) : la boutique de démo, servie sur `/`.
 
 > ⚠️ En serverless, l'état en mémoire (sessions, leads) n'est pas garanti
 > persistant entre les instances / démarrages à froid. Suffisant pour une démo ;
@@ -139,8 +141,9 @@ Vérification : ouvrez `https://votre-app.vercel.app/api/health` → doit affich
 sales-chatbot/
 ├── index.html              Boutique de démonstration (servie sur /)
 ├── server.js               Serveur Node classique (local, Render, Railway…)
+├── vercel.json             Config Vercel (statiques + fonction + routes)
 ├── api/
-│   └── [...path].js        Fonction serverless Vercel (attrape-tout)
+│   └── index.js            Fonction serverless Vercel (chat/config/leads/health)
 ├── lib/
 │   ├── engine.js           Logique métier partagée (chat, leads, config)
 │   ├── recommender.js      Moteur de vente hors-ligne (recherche, objections, leads)
