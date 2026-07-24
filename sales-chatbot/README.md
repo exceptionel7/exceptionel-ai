@@ -124,7 +124,7 @@ Vérification : ouvrez `https://votre-app.vercel.app/api/health` → doit affich
 
 - `api/[...path].js` : une fonction unique qui gère `/api/chat`, `/api/config`,
   `/api/leads`, `/api/health` (état partagé au sein d'une instance).
-- `vercel.json` : sert la démo (`/demo/index.html`) sur `/`.
+- `index.html` (à la racine) : la boutique de démo, servie automatiquement sur `/`.
 
 > ⚠️ En serverless, l'état en mémoire (sessions, leads) n'est pas garanti
 > persistant entre les instances / démarrages à froid. Suffisant pour une démo ;
@@ -137,8 +137,8 @@ Vérification : ouvrez `https://votre-app.vercel.app/api/health` → doit affich
 
 ```
 sales-chatbot/
+├── index.html              Boutique de démonstration (servie sur /)
 ├── server.js               Serveur Node classique (local, Render, Railway…)
-├── vercel.json             Config Vercel (sert la démo à la racine)
 ├── api/
 │   └── [...path].js        Fonction serverless Vercel (attrape-tout)
 ├── lib/
@@ -148,7 +148,6 @@ sales-chatbot/
 ├── public/
 │   └── embed.js            Widget embarquable (vanilla, Shadow DOM)
 ├── demo/
-│   ├── index.html          Boutique de démonstration
 │   └── catalog.sample.json Catalogue d'exemple
 └── README.md
 ```

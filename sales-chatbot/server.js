@@ -118,7 +118,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // --- Fichiers statiques ---
-  const rel = urlPath === "/" ? "/demo/index.html" : urlPath;
+  const rel = urlPath === "/" ? "/index.html" : urlPath;
   const filePath = path.join(ROOT, path.normalize(rel));
   if (!filePath.startsWith(ROOT)) {
     res.writeHead(403);
