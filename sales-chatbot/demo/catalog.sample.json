@@ -1,0 +1,74 @@
+[
+  {
+    "id": "casque-serenity",
+    "name": "Casque Serenity",
+    "category": "Audio",
+    "price_cents": 19900,
+    "currency": "EUR",
+    "tags": ["casque", "headphones", "audio", "musique", "reduction de bruit", "sans fil", "wireless", "voyage"],
+    "description": "Casque sans fil à réduction de bruit active, 40h d'autonomie et son haute résolution. Idéal pour les mélomanes et le télétravail.",
+    "image_url": "",
+    "url": "https://exceptionel.com/produits/casque-serenity",
+    "stock": 24
+  },
+  {
+    "id": "montre-horizon",
+    "name": "Montre Horizon",
+    "category": "Accessoires",
+    "price_cents": 14900,
+    "currency": "EUR",
+    "tags": ["montre", "watch", "acier", "elegant", "cadeau", "gift", "homme", "femme"],
+    "description": "Montre en acier inoxydable au design épuré, étanche 5 ATM, verre saphir anti-rayures. Un cadeau intemporel.",
+    "image_url": "",
+    "url": "https://exceptionel.com/produits/montre-horizon",
+    "stock": 12
+  },
+  {
+    "id": "sac-nomade",
+    "name": "Sac à dos Nomade",
+    "category": "Bagagerie",
+    "price_cents": 8990,
+    "currency": "EUR",
+    "tags": ["sac", "backpack", "bag", "voyage", "travel", "ordinateur", "laptop", "impermeable", "bureau"],
+    "description": "Sac à dos imperméable en tissu recyclé avec compartiment ordinateur 15\", port USB et dos ergonomique. Parfait pour le travail nomade.",
+    "image_url": "",
+    "url": "https://exceptionel.com/produits/sac-nomade",
+    "stock": 40
+  },
+  {
+    "id": "casque-focus-lite",
+    "name": "Écouteurs Focus Lite",
+    "category": "Audio",
+    "price_cents": 7900,
+    "currency": "EUR",
+    "tags": ["ecouteurs", "earbuds", "audio", "musique", "sport", "sans fil", "wireless", "abordable", "petit budget"],
+    "description": "Écouteurs sans fil compacts, résistants à la sueur, 24h d'autonomie avec le boîtier. L'entrée de gamme audio au meilleur prix.",
+    "image_url": "",
+    "url": "https://exceptionel.com/produits/focus-lite",
+    "stock": 60
+  },
+  {
+    "id": "bougie-aurea",
+    "name": "Bougie parfumée Aurea",
+    "category": "Maison",
+    "price_cents": 2950,
+    "currency": "EUR",
+    "tags": ["bougie", "candle", "maison", "home", "cadeau", "gift", "detente", "naturel"],
+    "description": "Bougie en cire de soja naturelle, parfum vanille et bois de santal, 50h de combustion. Idée cadeau à petit prix.",
+    "image_url": "",
+    "url": "https://exceptionel.com/produits/bougie-aurea",
+    "stock": 100
+  },
+  {
+    "id": "gourde-pure",
+    "name": "Gourde isotherme Pure",
+    "category": "Lifestyle",
+    "price_cents": 3490,
+    "currency": "EUR",
+    "tags": ["gourde", "bottle", "sport", "ecologique", "eco", "isotherme", "eau", "water", "cadeau"],
+    "description": "Gourde en acier double paroi : garde le froid 24h et le chaud 12h. Sans BPA, bouchon anti-fuite.",
+    "image_url": "",
+    "url": "https://exceptionel.com/produits/gourde-pure",
+    "stock": 80
+  }
+]

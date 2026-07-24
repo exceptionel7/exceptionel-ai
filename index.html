@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exceptionel AI — Studio marketing IA</title>
+    <meta
+      name="description"
+      content="Générez du contenu, des visuels et vendez plus grâce à l'IA pour exceptionel.com."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- ===================== EN-TÊTE ===================== -->
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">✦</span>
+        <div>
+          <strong>Exceptionel<span class="accent"> AI</span></strong>
+          <small>Studio marketing propulsé par l'IA</small>
+        </div>
+      </div>
+      <nav class="nav">
+        <button class="nav-link active" data-view="dashboard" data-i18n="nav.dashboard">Tableau de bord</button>
+        <button class="nav-link" data-view="generator" data-i18n="nav.generator">Générateur</button>
+        <button class="nav-link" data-view="visuals" data-i18n="nav.visuals">Visuels</button>
+        <button class="nav-link" data-view="calendar" data-i18n="nav.calendar">Calendrier</button>
+        <button class="nav-link" data-view="products" data-i18n="nav.products">Produits</button>
+        <button class="nav-link" data-view="settings" data-i18n="nav.settings">Réglages</button>
+      </nav>
+      <div class="topbar-right">
+        <div class="lang-switch" id="lang-switch">
+          <button class="lang-btn active" data-lang="fr">FR</button>
+          <button class="lang-btn" data-lang="en">EN</button>
+        </div>
+        <span id="mode-badge" class="badge badge-demo" data-i18n="badge.demo">Mode démo</span>
+      </div>
+    </header>
+
+    <main class="container">
+      <!-- ===================== TABLEAU DE BORD ===================== -->
+      <section id="view-dashboard" class="view active">
+        <div class="hero">
+          <h1 data-i18n="hero.title">Vendez plus, écrivez moins.</h1>
+          <p class="lead" data-i18n="hero.lead">
+            Exceptionel AI crée vos descriptions produits, articles, posts et
+            emails — et discute avec vos visiteurs pour les convertir en clients.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" data-view="generator" data-i18n="hero.generate">
+              ✍️ Générer du contenu
+            </button>
+            <button class="btn btn-ghost" id="open-chat-hero" data-i18n="hero.chat">
+              💬 Tester l'assistant
+            </button>
+          </div>
+        </div>
+
+        <div class="cards">
+          <article class="card" data-view="generator">
+            <div class="card-icon">✍️</div>
+            <h3 data-i18n="card.content.title">Contenu en un clic</h3>
+            <p data-i18n="card.content.desc">Descriptions, blog, réseaux sociaux, emails.</p>
+          </article>
+          <article class="card" id="open-chat-card">
+            <div class="card-icon">💬</div>
+            <h3 data-i18n="card.assistant.title">Assistant de vente</h3>
+            <p data-i18n="card.assistant.desc">Un chatbot qui répond et recommande.</p>
+          </article>
+          <article class="card" data-view="visuals">
+            <div class="card-icon">🖼️</div>
+            <h3 data-i18n="card.visual.title">Visuels de posts</h3>
+            <p data-i18n="card.visual.desc">Des images prêtes à publier.</p>
+          </article>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><strong id="stat-products">0</strong><span data-i18n="stat.products">produits</span></div>
+          <div class="stat"><strong>4</strong><span data-i18n="stat.types">types de contenu</span></div>
+          <div class="stat"><strong>2</strong><span data-i18n="stat.langs">langues</span></div>
+          <div class="stat"><strong>24/7</strong><span data-i18n="stat.assistant">assistant actif</span></div>
+        </div>
+      </section>
+
+      <!-- ===================== GÉNÉRATEUR ===================== -->
+      <section id="view-generator" class="view">
+        <h2 data-i18n="gen.title">Générateur de contenu</h2>
+        <p class="muted" data-i18n="gen.subtitle">Choisissez un type, un produit, un ton — puis générez.</p>
+
+        <div class="generator-grid">
+          <form id="gen-form" class="panel">
+            <label data-i18n="gen.type">Type de contenu</label>
+            <div class="chips" id="type-chips">
+              <button type="button" class="chip active" data-type="product-description" data-i18n="gen.type.product">Description produit</button>
+              <button type="button" class="chip" data-type="social-post" data-i18n="gen.type.social">Post réseau social</button>
+              <button type="button" class="chip" data-type="blog-article" data-i18n="gen.type.blog">Article de blog</button>
+              <button type="button" class="chip" data-type="marketing-email" data-i18n="gen.type.email">Email marketing</button>
+            </div>
+
+            <label for="subject" data-i18n="gen.subject">Produit ou sujet</label>
+            <input id="subject" type="text" list="product-list" autocomplete="off" data-i18n-ph="gen.subject.ph" />
+            <datalist id="product-list"></datalist>
+
+            <label for="tone" data-i18n="gen.tone">Ton</label>
+            <select id="tone">
+              <option value="professionnel" data-i18n="tone.professionnel">Professionnel</option>
+              <option value="enthousiaste" data-i18n="tone.enthousiaste">Enthousiaste</option>
+              <option value="luxe" data-i18n="tone.luxe">Luxe</option>
+              <option value="amical" data-i18n="tone.amical">Amical</option>
+            </select>
+
+            <button type="submit" class="btn btn-primary btn-block" id="gen-btn" data-i18n="gen.btn">Générer ✨</button>
+          </form>
+
+          <div class="panel result-panel">
+            <div class="result-head">
+              <span data-i18n="gen.result">Résultat</span>
+              <div class="result-actions">
+                <button id="schedule-btn" class="btn btn-small" disabled data-i18n="gen.schedule">Planifier</button>
+                <button id="copy-btn" class="btn btn-small" disabled data-i18n="gen.copy">Copier</button>
+              </div>
+            </div>
+            <pre id="result" class="result-box placeholder" data-i18n="gen.placeholder">Votre contenu généré apparaîtra ici…</pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== VISUELS ===================== -->
+      <section id="view-visuals" class="view">
+        <h2 data-i18n="visual.title">Générateur de visuels</h2>
+        <p class="muted" data-i18n="visual.subtitle">Créez une image de post prête à publier.</p>
+
+        <div class="generator-grid">
+          <form id="visual-form" class="panel">
+            <label for="visual-product" data-i18n="visual.product">Produit</label>
+            <select id="visual-product"></select>
+
+            <label for="visual-headline" data-i18n="visual.headline">Accroche (optionnel)</label>
+            <input id="visual-headline" type="text" autocomplete="off" data-i18n-ph="visual.headline.ph" />
+
+            <label data-i18n="visual.theme">Style</label>
+            <div class="chips" id="theme-chips">
+              <button type="button" class="chip active" data-theme="violet">Violet</button>
+              <button type="button" class="chip" data-theme="nuit">Nuit</button>
+              <button type="button" class="chip" data-theme="or">Or</button>
+              <button type="button" class="chip" data-theme="corail">Corail</button>
+              <button type="button" class="chip" data-theme="menthe">Menthe</button>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" data-i18n="visual.generate">Générer le visuel 🎨</button>
+          </form>
+
+          <div class="panel result-panel">
+            <div class="result-head">
+              <span data-i18n="gen.result">Résultat</span>
+              <button id="visual-download" class="btn btn-small" disabled data-i18n="visual.download">Télécharger</button>
+            </div>
+            <div class="visual-preview">
+              <canvas id="visual-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== CALENDRIER ===================== -->
+      <section id="view-calendar" class="view">
+        <h2 data-i18n="calendar.title">Calendrier de publication</h2>
+        <p class="muted" data-i18n="calendar.subtitle">Planifiez vos publications réseaux sociaux.</p>
+
+        <div class="generator-grid">
+          <form id="calendar-form" class="panel">
+            <label for="cal-date" data-i18n="calendar.date">Date</label>
+            <input id="cal-date" type="date" />
+
+            <label for="cal-platform" data-i18n="calendar.platform">Plateforme</label>
+            <select id="cal-platform">
+              <option>Instagram</option>
+              <option>Facebook</option>
+              <option>LinkedIn</option>
+              <option>TikTok</option>
+              <option>X (Twitter)</option>
+              <option>Newsletter</option>
+            </select>
+
+            <label for="cal-content" data-i18n="calendar.content">Contenu</label>
+            <textarea id="cal-content" rows="5" data-i18n-ph="calendar.content.ph"></textarea>
+
+            <button type="submit" class="btn btn-primary btn-block" data-i18n="calendar.add">Planifier ce post</button>
+          </form>
+
+          <div class="panel">
+            <div class="result-head">
+              <span data-i18n="calendar.upcoming">Publications planifiées</span>
+            </div>
+            <div id="calendar-list" class="calendar-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== PRODUITS ===================== -->
+      <section id="view-products" class="view">
+        <h2 data-i18n="products.title">Catalogue</h2>
+        <p class="muted" data-i18n="products.subtitle">Le contenu et l'assistant s'appuient sur ces produits.</p>
+        <div id="product-grid" class="product-grid"></div>
+      </section>
+
+      <!-- ===================== RÉGLAGES ===================== -->
+      <section id="view-settings" class="view">
+        <h2 data-i18n="settings.title">Réglages</h2>
+
+        <div class="panel settings-block">
+          <h3 data-i18n="settings.catalog.title">Connexion au catalogue en temps réel</h3>
+          <p class="muted" data-i18n="settings.catalog.desc">
+            Chargez vos vrais produits depuis une URL JSON.
+          </p>
+          <label for="catalog-url" data-i18n="settings.catalog.url">URL du flux produits (JSON)</label>
+          <input id="catalog-url" type="url" placeholder="https://exceptionel.com/products.json" autocomplete="off" />
+          <div class="settings-actions">
+            <button id="catalog-load" class="btn btn-primary" data-i18n="settings.catalog.load">Charger le catalogue</button>
+            <button id="catalog-reset" class="btn btn-ghost" data-i18n="settings.catalog.reset">Revenir aux produits de démo</button>
+          </div>
+          <p id="catalog-status" class="catalog-status"></p>
+        </div>
+
+        <div class="panel settings-block">
+          <h3 data-i18n="settings.lang.title">Langue</h3>
+          <div class="lang-switch" id="lang-switch-settings">
+            <button class="lang-btn active" data-lang="fr">Français</button>
+            <button class="lang-btn" data-lang="en">English</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ===================== WIDGET CHATBOT ===================== -->
+    <div id="chat-widget" class="chat-widget">
+      <button id="chat-toggle" class="chat-toggle" aria-label="Chat">💬</button>
+      <div id="chat-window" class="chat-window" hidden>
+        <div class="chat-header">
+          <div>
+            <strong data-i18n="chat.title">Assistant Exceptionel</strong>
+            <small data-i18n="chat.status">En ligne</small>
+          </div>
+          <button id="chat-close" class="chat-close" aria-label="Fermer">×</button>
+        </div>
+        <div id="chat-messages" class="chat-messages"></div>
+        <form id="chat-form" class="chat-input">
+          <input id="chat-text" type="text" autocomplete="off" data-i18n-ph="chat.ph" />
+          <button type="submit" class="btn btn-primary btn-small" data-i18n="chat.send">Envoyer</button>
+        </form>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <span>Exceptionel AI — démo pour exceptionel.com</span>
+    </footer>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" hidden></div>
+
+    <!-- Scripts (ordre important) -->
+    <script src="js/products.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/ai-engine.js"></script>
+    <script src="js/visual-generator.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/catalog.js"></script>
+    <script src="js/api.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
