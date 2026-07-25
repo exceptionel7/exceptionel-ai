@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exceptionel AI — Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="logo">✦</span>
+          <div><strong>Exceptionel<span style="color:#22d3ee"> AI</span></strong><small>Dashboard</small></div>
+        </div>
+        <nav class="nav" id="nav">
+          <button class="active" data-view="overview">📊 Vue d'ensemble</button>
+          <button data-view="leads">📇 Prospects</button>
+          <button data-view="videos">🎬 Vidéos</button>
+          <button data-view="brand">🎨 Marque</button>
+          <button data-view="catalog">🛍️ Catalogue</button>
+          <button data-view="settings">⚙️ Réglages</button>
+        </nav>
+      </aside>
+
+      <!-- Main -->
+      <main class="main">
+        <!-- OVERVIEW -->
+        <section id="view-overview" class="view active">
+          <div class="topline"><h1>Vue d'ensemble</h1></div>
+          <p class="sub">Statistiques et état de tes modules, en direct.</p>
+          <div class="banner" id="proto-note">
+            ℹ️ Prototype : les données (prospects, vidéos) sont stockées en mémoire par les modules.
+            Elles peuvent se réinitialiser entre deux requêtes. En production, tout sera persisté en base (PostgreSQL).
+          </div>
+
+          <div class="kpis" id="kpis">
+            <div class="kpi"><strong id="kpi-leads">–</strong><span>Prospects</span></div>
+            <div class="kpi"><strong id="kpi-qual" class="accent">–</strong><span>Prospects qualifiés</span></div>
+            <div class="kpi"><strong id="kpi-videos">–</strong><span>Vidéos générées</span></div>
+            <div class="kpi"><strong id="kpi-pubs">–</strong><span>Publications</span></div>
+          </div>
+
+          <div class="panel">
+            <h3>État des modules</h3>
+            <p class="hint">Renseigne les URLs de tes modules dans <b>Réglages</b> pour activer le suivi.</p>
+            <div class="modules">
+              <div class="mod" id="mod-chatbot">
+                <div class="head"><h4>💬 Chatbot de vente</h4><span class="status" id="st-chatbot">…</span></div>
+                <ul id="info-chatbot"><li>URL non configurée</li></ul>
+              </div>
+              <div class="mod" id="mod-video">
+                <div class="head"><h4>🎬 Vidéo marketing</h4><span class="status" id="st-video">…</span></div>
+                <ul id="info-video"><li>URL non configurée</li></ul>
+              </div>
+            </div>
+            <button class="btn" id="refresh">↻ Rafraîchir</button>
+          </div>
+        </section>
+
+        <!-- LEADS -->
+        <section id="view-leads" class="view">
+          <div class="topline"><h1>Prospects</h1></div>
+          <p class="sub">Leads qualifiés par le chatbot (email, besoin, budget, score).</p>
+          <div class="panel">
+            <div id="leads-body"><p class="empty">Chargement…</p></div>
+            <button class="btn" id="reload-leads">↻ Recharger</button>
+          </div>
+        </section>
+
+        <!-- VIDEOS -->
+        <section id="view-videos" class="view">
+          <div class="topline"><h1>Vidéos</h1></div>
+          <p class="sub">Vidéos générées par le module marketing et leurs publications.</p>
+          <div class="panel">
+            <div id="videos-body"><p class="empty">Chargement…</p></div>
+            <button class="btn" id="reload-videos">↻ Recharger</button>
+          </div>
+        </section>
+
+        <!-- BRAND -->
+        <section id="view-brand" class="view">
+          <div class="topline"><h1>Marque</h1></div>
+          <p class="sub">Configure l'identité et le ton de l'IA. Ces infos alimentent le contenu et le chatbot.</p>
+          <div class="panel">
+            <label>Nom de la marque</label>
+            <input id="b-name" placeholder="Exceptionel" />
+            <label>Ton</label>
+            <select id="b-tone">
+              <option value="chaleureux et professionnel">Chaleureux et professionnel</option>
+              <option value="enthousiaste">Enthousiaste</option>
+              <option value="luxe et raffiné">Luxe et raffiné</option>
+              <option value="amical et décontracté">Amical et décontracté</option>
+            </select>
+            <label>Public cible</label>
+            <input id="b-audience" placeholder="ex : jeunes actifs urbains" />
+            <label>Arguments clés (un par ligne)</label>
+            <textarea id="b-values" rows="4" placeholder="Livraison offerte dès 50€&#10;Fabrication responsable&#10;Garantie 30 jours"></textarea>
+            <button class="btn btn-primary" id="save-brand">💾 Enregistrer la marque</button>
+            <div class="msg" id="brand-msg"></div>
+          </div>
+        </section>
+
+        <!-- CATALOG -->
+        <section id="view-catalog" class="view">
+          <div class="topline"><h1>Catalogue</h1></div>
+          <p class="sub">Gère tes produits (JSON). Ils alimentent le chatbot et la génération de vidéos.</p>
+          <div class="panel">
+            <label>Produits (tableau JSON)</label>
+            <textarea id="cat-json" rows="12" spellcheck="false"></textarea>
+            <div class="row">
+              <button class="btn btn-primary" id="save-cat">💾 Enregistrer</button>
+              <button class="btn" id="push-cat">📤 Charger dans le chatbot (session démo)</button>
+              <button class="btn" id="load-sample">Exemple</button>
+            </div>
+            <div class="msg" id="cat-msg"></div>
+          </div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section id="view-settings" class="view">
+          <div class="topline"><h1>Réglages</h1></div>
+          <p class="sub">Connecte le dashboard aux URLs de tes modules déployés sur Vercel.</p>
+          <div class="panel">
+            <label>URL du module Chatbot</label>
+            <input id="s-chatbot" placeholder="https://exceptionel-ai.vercel.app" />
+            <label>URL du module Vidéo</label>
+            <input id="s-video" placeholder="https://exceptionel-video.vercel.app" />
+            <button class="btn btn-primary" id="save-settings">💾 Enregistrer & tester</button>
+            <div class="msg" id="settings-msg"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
