@@ -151,7 +151,7 @@ async function converse({ apiKey, model, brand, messages, catalog, session }) {
 
   while (guard++ < 5) {
     const resp = await callMessages(apiKey, {
-      model: model || "claude-sonnet-4-20250514",
+      model: model || "claude-sonnet-5",
       max_tokens: 1024,
       system,
       tools: TOOLS,
@@ -199,10 +199,41 @@ async function converse({ apiKey, model, brand, messages, catalog, session }) {
 // Test minimal de connexion à Claude (auth + modèle), sans outils.
 function ping(apiKey, model) {
   return callMessages(apiKey, {
-    model: model || "claude-sonnet-4-20250514",
+    model: model || "claude-sonnet-5",
     max_tokens: 16,
     messages: [{ role: "user", content: "Réponds simplement: ok" }],
   }).then((r) => (r.content && r.content[0] && r.content[0].text) || "ok");
 }
 
-module.exports = { converse, ping, TOOLS, buildSystemPrompt };
+// Liste les modèles disponibles pour la clé (GET /v1/models).
+function listModels(apiKey) {
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        hostname: API_HOST,
+        path: "/v1/models?limit=50",
+        method: "GET",
+        headers: { "x-api-key": apiKey, "anthropic-version": API_VERSION },
+        timeout: 15000,
+      },
+      (res) => {
+        let d = "";
+        res.on("data", (c) => (d += c));
+        res.on("end", () => {
+          try {
+            const j = JSON.parse(d);
+            if (j.error) return reject(new Error(j.error.message));
+            resolve((j.data || []).map((m) => m.id));
+          } catch (e) {
+            reject(e);
+          }
+        });
+      }
+    );
+    req.on("timeout", () => req.destroy(new Error("timeout")));
+    req.on("error", reject);
+    req.end();
+  });
+}
+
+module.exports = { converse, ping, listModels, TOOLS, buildSystemPrompt };

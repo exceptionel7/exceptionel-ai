@@ -61,7 +61,7 @@ async function handleChat(body) {
 
   // La clé est lue à chaque appel (compatible chargement .env tardif + serverless).
   const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
-  const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514";
+  const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5";
 
   if (Array.isArray(body.catalog) && body.catalog.length) session.catalog = body.catalog;
   if (body.brand) session.brand = body.brand;
@@ -145,7 +145,7 @@ function health() {
 // Teste réellement l'appel à Claude et renvoie l'erreur exacte le cas échéant.
 async function diagnose() {
   const key = process.env.ANTHROPIC_API_KEY || "";
-  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514";
+  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-5";
   if (!key) {
     return {
       key_present: false,
@@ -153,9 +153,16 @@ async function diagnose() {
       hint: "Aucune ANTHROPIC_API_KEY détectée dans les variables d'environnement Vercel.",
     };
   }
+  // Liste des modèles réellement disponibles pour ce compte (utile en cas d'erreur de modèle).
+  let available_models = null;
+  try {
+    available_models = await claude.listModels(key);
+  } catch (e) {
+    available_models = "indisponible: " + String((e && e.message) || e);
+  }
   try {
     const sample = await claude.ping(key, model);
-    return { key_present: true, model, claude_ok: true, sample };
+    return { key_present: true, model, claude_ok: true, sample, available_models };
   } catch (e) {
     const msg = String((e && e.message) || e);
     let hint = "Erreur inconnue — copiez le message à votre développeur.";
@@ -167,7 +174,7 @@ async function diagnose() {
       hint = "Nom de modèle invalide → définissez ANTHROPIC_MODEL sur un modèle valide.";
     else if (/429|rate/i.test(msg))
       hint = "Limite de débit atteinte → réessayez ou augmentez vos limites.";
-    return { key_present: true, model, claude_ok: false, error: msg, hint };
+    return { key_present: true, model, claude_ok: false, error: msg, hint, available_models };
   }
 }
 
