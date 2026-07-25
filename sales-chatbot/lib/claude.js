@@ -196,4 +196,13 @@ async function converse({ apiKey, model, brand, messages, catalog, session }) {
   throw new Error("tool loop exceeded");
 }
 
-module.exports = { converse, TOOLS, buildSystemPrompt };
+// Test minimal de connexion à Claude (auth + modèle), sans outils.
+function ping(apiKey, model) {
+  return callMessages(apiKey, {
+    model: model || "claude-sonnet-4-20250514",
+    max_tokens: 16,
+    messages: [{ role: "user", content: "Réponds simplement: ok" }],
+  }).then((r) => (r.content && r.content[0] && r.content[0].text) || "ok");
+}
+
+module.exports = { converse, ping, TOOLS, buildSystemPrompt };

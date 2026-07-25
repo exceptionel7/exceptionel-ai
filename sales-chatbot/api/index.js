@@ -69,6 +69,9 @@ module.exports = async (req, res) => {
     if (req.method === "GET" && route.includes("health")) {
       return json(res, 200, engine.health());
     }
+    if (req.method === "GET" && route.includes("diag")) {
+      return json(res, 200, await engine.diagnose());
+    }
     return json(res, 404, { error: "not_found", route });
   } catch (e) {
     return json(res, 500, { error: e.message });

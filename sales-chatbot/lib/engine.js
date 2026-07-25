@@ -141,4 +141,34 @@ function health() {
   };
 }
 
-module.exports = { handleChat, setConfig, getLeads, health, DEFAULT_CATALOG };
+// ---------------- Diagnostic Claude ----------------
+// Teste réellement l'appel à Claude et renvoie l'erreur exacte le cas échéant.
+async function diagnose() {
+  const key = process.env.ANTHROPIC_API_KEY || "";
+  const model = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514";
+  if (!key) {
+    return {
+      key_present: false,
+      claude_ok: false,
+      hint: "Aucune ANTHROPIC_API_KEY détectée dans les variables d'environnement Vercel.",
+    };
+  }
+  try {
+    const sample = await claude.ping(key, model);
+    return { key_present: true, model, claude_ok: true, sample };
+  } catch (e) {
+    const msg = String((e && e.message) || e);
+    let hint = "Erreur inconnue — copiez le message à votre développeur.";
+    if (/401|authentication|invalid x-api-key|invalid api/i.test(msg))
+      hint = "Clé API invalide ou mal copiée dans Vercel → recopiez-la puis Redeploy.";
+    else if (/credit|billing|quota|balance/i.test(msg))
+      hint = "Crédit Anthropic insuffisant → ajoutez du crédit sur console.anthropic.com (Billing).";
+    else if (/model|not_found|not found/i.test(msg))
+      hint = "Nom de modèle invalide → définissez ANTHROPIC_MODEL sur un modèle valide.";
+    else if (/429|rate/i.test(msg))
+      hint = "Limite de débit atteinte → réessayez ou augmentez vos limites.";
+    return { key_present: true, model, claude_ok: false, error: msg, hint };
+  }
+}
+
+module.exports = { handleChat, setConfig, getLeads, health, diagnose, DEFAULT_CATALOG };
