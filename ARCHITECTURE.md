@@ -1,8 +1,9 @@
 # Exceptionel AI — Architecture technique
 
 Plateforme SaaS qui aide les petites entreprises à **conclure la vente directement
-sur leur site** grâce à l'IA : génération de contenu marketing, chatbot de vente
-embarquable, dashboard, paiements Stripe.
+sur leur site** grâce à l'IA : génération de contenu marketing, **génération de
+vidéos marketing avec publication automatique sur les réseaux sociaux**, chatbot
+de vente embarquable, dashboard, paiements Stripe.
 
 ---
 
@@ -71,12 +72,14 @@ séparables plus tard) :
 | ---------------- | --------------------------------------------------------------- |
 | **auth**         | Inscription, login, JWT (access + refresh), gestion org/users   |
 | **content**      | Génération de contenu marketing via Claude (posts, emails…)     |
+| **video**        | Script vidéo (Claude) → rendu via API tierce (Runway/HeyGen) → job async |
+| **social**       | Publication auto (Instagram/TikTok/Facebook) + gestion des connexions OAuth |
 | **chatbot**      | Cœur du produit : conversation de vente + Claude function calling |
 | **catalog**      | CRUD produits, import (JSON, Shopify), embeddings pour recherche |
 | **leads**        | Enregistrement et suivi des leads qualifiés                     |
 | **billing**      | Abonnements Stripe + webhooks + quotas                          |
 | **orders**       | Commandes, checkout Stripe, suivi, notifications                |
-| **analytics**    | Agrégats : conversion, messages, ventes                         |
+| **analytics**    | Agrégats : conversion, messages, vidéos publiées, ventes        |
 
 ### 2.3 Base de données — PostgreSQL
 
@@ -121,6 +124,21 @@ api_keys              -- clés publiques du widget + clés serveur
 
 usage_events          -- quotas & analytics
   id, org_id, type, quantity, created_at
+
+videos                -- vidéos marketing générées
+  id, org_id, product_id → products, script(jsonb), provider,
+  provider_job_id, status('draft'|'rendering'|'ready'|'failed'),
+  video_url, caption, hashtags(text[]), created_at
+
+social_accounts       -- comptes réseaux sociaux connectés (OAuth)
+  id, org_id, platform('instagram'|'tiktok'|'facebook'),
+  account_ref, access_token(chiffré), refresh_token(chiffré),
+  token_expires_at, scopes(text[]), created_at
+
+video_publications    -- publication d'une vidéo sur une plateforme
+  id, org_id, video_id → videos, social_account_id → social_accounts,
+  platform, status('queued'|'published'|'failed'), external_post_id,
+  post_url, error, published_at
 ```
 
 Index clés : `products(org_id)`, `products USING ivfflat (embedding)`,
@@ -141,6 +159,18 @@ POST    /v1/products/import       → { source: 'shopify'|'json', url|data }
 
 # Contenu marketing
 POST /v1/content/generate         → { type, product, tone, audience } ⇒ variations
+
+# Vidéo marketing
+POST /v1/video/script             → { productId, brand } ⇒ script structuré (Claude)
+POST /v1/video/generate           → { productId, provider, platforms[] } ⇒ job vidéo + publications
+GET  /v1/video/:id                → statut + url de la vidéo
+POST /v1/webhooks/video           → callback du fournisseur vidéo (rendu terminé)
+
+# Connexions réseaux sociaux (OAuth) + publication
+GET  /v1/social/accounts          → comptes connectés
+GET  /v1/social/connect/:platform → démarre l'OAuth (Meta / TikTok)
+GET  /v1/social/callback/:platform→ callback OAuth (stocke les tokens chiffrés)
+POST /v1/social/publish           → { videoId, platforms[] } ⇒ publications
 
 # Chatbot (appelé par le widget, auth par public_key + origine)
 POST /v1/chat                     → { sessionId, message } ⇒ { reply, products, actions }
@@ -221,7 +251,64 @@ Le chatbot ne se contente pas de répondre : il **agit** via des outils
 
 ---
 
-## 6. Paiement & commandes (Stripe)
+## 6. Génération vidéo marketing & publication sociale
+
+Module qui transforme une fiche produit en une **vidéo courte prête à publier**,
+puis la diffuse automatiquement sur les réseaux sociaux du marchand.
+
+### 6.1 Pipeline
+
+```
+1. Script    : product + brand  → Claude → script structuré
+               { hook, body, cta, voiceover, caption, hashtags, durationSec }
+2. Rendu     : script → API vidéo tierce (Runway / HeyGen) → job asynchrone
+               (le rendu prend du temps → polling ou webhook /v1/webhooks/video)
+3. Stockage  : la vidéo prête est enregistrée (URL) dans `videos`
+4. Publication: pour chaque plateforme choisie → API officielle → `video_publications`
+```
+
+### 6.2 Abstraction fournisseur vidéo
+
+Interface commune `generateVideo({ provider, script, productImage, avatar, voice })`
+avec des adaptateurs interchangeables :
+
+- **HeyGen** — vidéos avatar/voix-off (`POST /v2/video/generate`, header `X-Api-Key`,
+  puis polling du statut).
+- **Runway** — génération image→vidéo (`POST /v1/image_to_video`, `Bearer`,
+  puis polling de la tâche).
+- **mock** — repli sans clé : renvoie une vidéo simulée (pour la démo).
+
+### 6.3 Publication (APIs officielles)
+
+- **Instagram Reels** (Meta Graph API) : créer un conteneur média
+  (`POST /{ig-user-id}/media` avec `media_type=REELS`, `video_url`, `caption`),
+  puis publier (`POST /{ig-user-id}/media_publish`).
+- **Facebook Page** : `POST /{page-id}/videos` (`file_url`, `description`).
+- **TikTok** (Content Posting API) : `POST /v2/post/publish/video/init/` puis upload.
+
+Chaque plateforme requiert un **token OAuth par compte connecté** (table
+`social_accounts`, tokens chiffrés au repos). Le service `social` gère le flux
+OAuth, le rafraîchissement des tokens et le mapping vers les publications.
+
+### 6.4 Contraintes réelles (à anticiper)
+
+- **Revue d'application obligatoire** : la publication de contenu nécessite
+  l'approbation des plateformes (permissions Meta `instagram_content_publish` /
+  `pages_manage_posts` ; scope TikTok `video.publish`). Prévoir le processus de
+  validation avant la mise en production.
+- **Rendu asynchrone** : la génération vidéo est longue → file d'attente (BullMQ/
+  Redis) + webhooks, jamais un appel bloquant dans la requête HTTP.
+- **Coûts** : APIs vidéo facturées à la génération → quotas par plan + suivi.
+- **Formats** : respecter ratios/durées par plateforme (Reels/TikTok 9:16, ≤ 90 s).
+
+> Le **prototype** de ce dépôt (`marketing-video/`) implémente réellement la
+> **génération de script** (Claude + repli hors-ligne) et fournit des
+> **adaptateurs vidéo/sociaux prêts à brancher**, avec un **mode mock** qui simule
+> le rendu et la publication de bout en bout — démontrable sans clé ni réseau.
+
+---
+
+## 7. Paiement & commandes (Stripe)
 
 - **Abonnement SaaS** (le marchand paie Exceptionel AI) : Stripe Billing,
   plans (Starter/Pro/Business), quotas de messages via `usage_events`,
@@ -233,7 +320,7 @@ Le chatbot ne se contente pas de répondre : il **agit** via des outils
 
 ---
 
-## 7. Sécurité & conformité
+## 8. Sécurité & conformité
 
 - Secrets côté serveur uniquement (Anthropic, Stripe), via variables d'env / vault.
 - JWT courts + refresh tokens ; hachage mots de passe (argon2/bcrypt).
@@ -241,10 +328,11 @@ Le chatbot ne se contente pas de répondre : il **agit** via des outils
 - Rate limiting (Redis) par IP et par clé.
 - Validation d'entrée (zod) ; requêtes SQL paramétrées (Prisma).
 - RGPD : consentement, export/suppression des leads, rétention configurable.
+- Tokens OAuth réseaux sociaux **chiffrés au repos** ; jamais exposés au frontend.
 
 ---
 
-## 8. Déploiement
+## 9. Déploiement
 
 - **Frontend** : Vercel / Netlify (dashboard) + CDN pour `embed.js`.
 - **Backend** : conteneurs (Docker) sur Render/Railway/Fly.io/ECS ; autoscaling.
@@ -255,12 +343,21 @@ Le chatbot ne se contente pas de répondre : il **agit** via des outils
 
 ---
 
-## 9. Feuille de route (incrémentale)
+## 10. Feuille de route (incrémentale)
 
-1. ✅ **Prototype chatbot de vente** (ce dépôt) : widget + backend + recommandation
-   + qualification de lead, Claude-ready avec repli hors-ligne. ← *cœur différenciant*
-2. Auth + multi-tenant + persistance PostgreSQL.
-3. Dashboard React (marque, catalogue, conversations, leads).
-4. Intégration Claude réelle en production (function calling + pgvector).
-5. Stripe : abonnements + checkout des ventes + webhooks.
-6. Analytics & notifications temps réel.
+> Principe : **développer et tester un module à la fois**, en commençant par le
+> cœur différenciant (le chatbot de vente).
+
+1. ✅ **Prototype chatbot de vente** (`sales-chatbot/`) : widget + backend +
+   recommandation + qualification de lead, Claude function calling avec repli
+   hors-ligne, déployé sur Vercel. ← *cœur différenciant*
+2. ✅ **Prototype génération vidéo** (`marketing-video/`) : script via Claude +
+   repli hors-ligne, adaptateurs Runway/HeyGen et Meta/TikTok, mode mock de bout
+   en bout.
+3. Auth + multi-tenant + persistance PostgreSQL (conversations, leads, vidéos).
+4. Dashboard React (marque, catalogue, conversations, contenu, vidéos, stats).
+5. Intégration Claude en production (function calling + pgvector).
+6. Intégrations réelles : fournisseur vidéo + OAuth réseaux sociaux (après revue
+   d'application des plateformes).
+7. Stripe : abonnements + checkout des ventes + webhooks.
+8. Analytics & notifications temps réel.

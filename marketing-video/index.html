@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exceptionel AI — Génération Vidéo Marketing</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #0f1115; color: #e7e9ee; }
+      header { padding: 18px 28px; border-bottom: 1px solid #262b36; display: flex; align-items: center; gap: 10px; }
+      header .logo { color: #7c5cff; font-size: 22px; }
+      header strong { font-size: 16px; }
+      header small { color: #9aa2b1; display: block; font-size: 11px; }
+      .badge { margin-left: auto; font-size: 12px; color: #9aa2b1; border: 1px solid #262b36; padding: 6px 10px; border-radius: 999px; }
+      .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 80px; }
+      h1 { font-size: 26px; }
+      .lead { color: #9aa2b1; margin-bottom: 24px; }
+      .grid { display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+      .panel { background: #171a21; border: 1px solid #262b36; border-radius: 14px; padding: 20px; }
+      label { display: block; font-size: 13px; color: #9aa2b1; margin: 12px 0 6px; }
+      label:first-child { margin-top: 0; }
+      input, textarea { width: 100%; background: #0f1115; border: 1px solid #262b36; color: #e7e9ee; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-family: inherit; }
+      textarea { resize: vertical; }
+      .platforms { display: flex; gap: 8px; flex-wrap: wrap; }
+      .pf { flex: 1; text-align: center; border: 1px solid #262b36; border-radius: 10px; padding: 8px; cursor: pointer; font-size: 13px; user-select: none; }
+      .pf.on { background: rgba(124,92,255,.18); border-color: #7c5cff; color: #fff; }
+      .btn { width: 100%; margin-top: 16px; border: none; border-radius: 10px; padding: 12px; font-weight: 700; font-size: 14px; cursor: pointer; background: linear-gradient(135deg, #7c5cff, #5b8cff); color: #fff; }
+      .btn:disabled { opacity: .5; cursor: not-allowed; }
+      .out { min-height: 320px; }
+      .out h3 { margin: 0 0 6px; }
+      .muted { color: #9aa2b1; font-size: 13px; }
+      .block { border: 1px solid #262b36; border-radius: 10px; padding: 14px; margin-bottom: 12px; background: #0f1115; }
+      .k { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #22d3ee; }
+      .hashtags { color: #7c9cff; font-size: 13px; }
+      .video-box { display: flex; align-items: center; gap: 12px; }
+      .video-thumb { width: 90px; height: 160px; border-radius: 10px; background: linear-gradient(135deg,#7c5cff,#22d3ee); display: flex; align-items: center; justify-content: center; font-size: 30px; }
+      .pub { display: flex; justify-content: space-between; align-items: center; border: 1px solid #262b36; border-radius: 8px; padding: 8px 12px; margin-top: 6px; font-size: 13px; }
+      .pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; }
+      .pill.ok { background: rgba(52,211,153,.15); color: #34d399; }
+      .pill.mock { background: rgba(255,212,121,.12); color: #ffd479; }
+      .pill.err { background: rgba(255,120,120,.15); color: #ff8080; }
+      a { color: #7c9cff; }
+      .scene { font-size: 13px; color: #cbd2df; border-left: 2px solid #7c5cff; padding-left: 10px; margin: 6px 0; }
+      @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span class="logo">✦</span>
+      <div><strong>Exceptionel AI</strong><small>Génération Vidéo Marketing</small></div>
+      <span class="badge" id="mode-badge">…</span>
+    </header>
+
+    <div class="wrap">
+      <h1>De la fiche produit à la vidéo publiée 🎬</h1>
+      <p class="lead">
+        L'IA écrit le script, l'envoie à un service de génération vidéo, puis
+        publie sur Instagram, TikTok et Facebook. <span class="muted">(Mode démo :
+        script réel, rendu et publication simulés tant que les clés ne sont pas
+        configurées.)</span>
+      </p>
+
+      <div class="grid">
+        <form class="panel" id="form">
+          <label>Nom du produit</label>
+          <input id="name" value="Casque Serenity" />
+          <label>Description</label>
+          <textarea id="desc" rows="3">Casque sans fil à réduction de bruit active, 40h d'autonomie et son haute résolution.</textarea>
+          <label>Prix (€)</label>
+          <input id="price" type="number" value="199" />
+          <label>Publier sur</label>
+          <div class="platforms">
+            <div class="pf on" data-p="instagram">Instagram</div>
+            <div class="pf on" data-p="tiktok">TikTok</div>
+            <div class="pf on" data-p="facebook">Facebook</div>
+          </div>
+          <button class="btn" id="go" type="submit">Générer la vidéo 🎬</button>
+        </form>
+
+        <div class="panel out" id="out">
+          <p class="muted">Le script, la vidéo et les publications apparaîtront ici.</p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const $ = (s) => document.querySelector(s);
+      const platforms = new Set(["instagram", "tiktok", "facebook"]);
+      document.querySelectorAll(".pf").forEach((el) =>
+        el.addEventListener("click", () => {
+          const p = el.dataset.p;
+          if (platforms.has(p)) { platforms.delete(p); el.classList.remove("on"); }
+          else { platforms.add(p); el.classList.add("on"); }
+        })
+      );
+
+      fetch("/api/health").then((r) => r.json()).then((h) => {
+        $("#mode-badge").textContent = "script: " + h.script_ai + " · vidéo: " + h.video_provider;
+      }).catch(() => {});
+
+      function esc(s) { return String(s == null ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
+
+      $("#form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const go = $("#go"); go.disabled = true; go.textContent = "Génération en cours…";
+        $("#out").innerHTML = '<p class="muted">⏳ L\'IA écrit le script, génère la vidéo et prépare les publications…</p>';
+        const product = {
+          id: "prod-demo",
+          name: $("#name").value.trim(),
+          description: $("#desc").value.trim(),
+          price_cents: Math.round((parseFloat($("#price").value) || 0) * 100),
+          currency: "EUR",
+          url: "https://exceptionel.com/produits/prod-demo",
+        };
+        try {
+          const res = await fetch("/api/generate", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ product, platforms: Array.from(platforms) }),
+          });
+          const data = await res.json();
+          render(data);
+        } catch (err) {
+          $("#out").innerHTML = '<p class="muted">Erreur : ' + esc(err.message) + "</p>";
+        } finally {
+          go.disabled = false; go.textContent = "Générer la vidéo 🎬";
+        }
+      });
+
+      function render(d) {
+        const s = d.script || {};
+        const v = d.video || {};
+        const scenes = (s.scenes || []).map((sc) => '<div class="scene"><b>' + esc(sc.t) + "</b> — " + esc(sc.visual) + '<br/><span class="muted">« ' + esc(sc.text) + " »</span></div>").join("");
+        const pubs = (d.publications || []).map((p) => {
+          const cls = p.status === "published" ? (p.mock ? "mock" : "ok") : (p.status === "failed" ? "err" : "mock");
+          const label = p.mock ? "simulé" : p.status;
+          const link = p.post_url ? ' · <a href="' + esc(p.post_url) + '" target="_blank" rel="noopener">voir</a>' : "";
+          return '<div class="pub"><span>' + esc(p.platform) + link + '</span><span class="pill ' + cls + '">' + esc(label) + "</span></div>";
+        }).join("");
+
+        $("#out").innerHTML =
+          '<div class="block"><span class="k">Script (' + esc(s.source || "") + ')</span>' +
+          "<h3>" + esc(s.hook || "") + "</h3>" +
+          "<p>" + (s.body || []).map(esc).join("<br/>") + "</p>" +
+          '<p><b>CTA :</b> ' + esc(s.cta || "") + "</p>" +
+          (scenes ? '<span class="k">Découpage</span>' + scenes : "") +
+          '<p class="muted">⏱ ~' + esc(s.durationSec || 20) + 's · Format 9:16</p></div>' +
+
+          '<div class="block"><span class="k">Vidéo (' + esc(v.provider || "") + ')</span>' +
+          '<div class="video-box"><div class="video-thumb">🎬</div><div>' +
+          '<p style="margin:0 0 6px">Statut : <b>' + esc(v.status || "") + "</b>" + (v.mock ? ' <span class="pill mock">simulée</span>' : "") + "</p>" +
+          (v.url ? '<a href="' + esc(v.url) + '" target="_blank" rel="noopener">' + esc(v.url) + "</a>" : "") +
+          (v.note ? '<p class="muted">' + esc(v.note) + "</p>" : "") +
+          "</div></div></div>" +
+
+          '<div class="block"><span class="k">Légende</span><p>' + esc(s.caption || "") + '</p><p class="hashtags">' + (s.hashtags || []).map(esc).join(" ") + "</p></div>" +
+
+          '<div class="block"><span class="k">Publications</span>' + (pubs || '<p class="muted">Aucune</p>') + "</div>";
+      }
+    </script>
+  </body>
+</html>
