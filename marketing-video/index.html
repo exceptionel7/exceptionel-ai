@@ -68,6 +68,15 @@
           <textarea id="desc" rows="3">Casque sans fil à réduction de bruit active, 40h d'autonomie et son haute résolution.</textarea>
           <label>Prix (€)</label>
           <input id="price" type="number" value="199" />
+          <label>Image produit (URL, optionnel — pour Runway image→vidéo)</label>
+          <input id="imgurl" placeholder="https://…/photo-produit.jpg (laisser vide = texte→vidéo)" />
+          <label>Fournisseur vidéo</label>
+          <select id="provider">
+            <option value="auto">Auto</option>
+            <option value="runway">Runway</option>
+            <option value="heygen">HeyGen (avatar)</option>
+            <option value="mock">Démo (mock)</option>
+          </select>
           <label>Publier sur</label>
           <div class="platforms">
             <div class="pf on" data-p="instagram">Instagram</div>
@@ -110,12 +119,14 @@
           description: $("#desc").value.trim(),
           price_cents: Math.round((parseFloat($("#price").value) || 0) * 100),
           currency: "EUR",
+          image_url: $("#imgurl").value.trim(),
           url: "https://exceptionel.com/produits/prod-demo",
         };
+        const provider = $("#provider").value;
         try {
           const res = await fetch("/api/generate", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ product, platforms: Array.from(platforms) }),
+            body: JSON.stringify({ product, platforms: Array.from(platforms), provider }),
           });
           const data = await res.json();
           render(data);

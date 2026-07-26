@@ -31,7 +31,9 @@ et les **publications**.
 | `ANTHROPIC_API_KEY` | Script généré par Claude | Repli hors-ligne (gabarits) |
 | `ANTHROPIC_MODEL` | Modèle Claude (défaut `claude-sonnet-5`) | — |
 | `HEYGEN_API_KEY` | Rendu vidéo avatar/voix-off (HeyGen) | Vidéo simulée (mock) |
-| `RUNWAY_API_KEY` | Rendu image→vidéo (Runway) | Vidéo simulée (mock) |
+| `HEYGEN_AVATAR_ID` / `HEYGEN_VOICE_ID` | Avatar et voix HeyGen à utiliser | Requis pour un vrai rendu HeyGen |
+| `RUNWAY_API_KEY` | Rendu vidéo Runway (modèle `gen4.5` : texte OU image → vidéo) | Vidéo simulée (mock) |
+| `RUNWAY_MODEL` / `RUNWAY_RATIO` / `RUNWAY_DURATION` / `RUNWAY_VERSION` | Réglages Runway (optionnels) | `gen4.5` / `720:1280` / `5` / `2024-11-06` |
 | `META_ACCESS_TOKEN` + `META_IG_USER_ID` | Publication Instagram Reels | Publication simulée |
 | `META_ACCESS_TOKEN` + `META_FB_PAGE_ID` | Publication Facebook Page | Publication simulée |
 | `TIKTOK_ACCESS_TOKEN` | Publication TikTok | Publication simulée |

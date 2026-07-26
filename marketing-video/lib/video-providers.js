@@ -78,33 +78,46 @@ async function heygenStatus(jobId, config) {
 }
 
 // ---------------- Runway ----------------
+// Construit un prompt visuel concis (Runway répond mieux aux descriptions de
+// scène / mouvement / caméra qu'à un simple slogan).
+function runwayPrompt(script) {
+  var scene = (script.scenes && script.scenes[0] && script.scenes[0].visual) || "";
+  var base = scene || ((script.hook || "") + " " + (script.body || []).join(" "));
+  return String(base).replace(/\s+/g, " ").trim().slice(0, 480);
+}
+
 async function runwayGenerate(script, productImage, config) {
-  // Doc: https://docs.dev.runwayml.com — POST /v1/image_to_video (Bearer)
-  const body = {
-    model: "gen3a_turbo",
-    promptImage: productImage || undefined,
-    promptText: script.hook + " " + script.body.join(" "),
-    ratio: "768:1280", // ~9:16
-    duration: Math.min(script.durationSec || 10, 10),
-  };
+  // Doc: https://docs.dev.runwayml.com — modèle gen4.5 (texte OU image → vidéo)
+  const model = config.runwayModel || "gen4.5";
+  const version = config.runwayVersion || "2024-11-06";
+  const ratio = config.runwayRatio || "720:1280"; // vertical 9:16
+  const duration = config.runwayDuration || 5;
+  const headers = { Authorization: "Bearer " + config.runwayKey, "X-Runway-Version": version };
+
+  let path, body;
+  if (productImage) {
+    path = "/v1/image_to_video";
+    body = { model, promptImage: productImage, promptText: runwayPrompt(script), ratio, duration };
+  } else {
+    // Pas d'image → génération à partir du texte (gen4.5 le permet).
+    path = "/v1/text_to_video";
+    body = { model, promptText: runwayPrompt(script), ratio, duration };
+  }
+
   const res = await httpsJSON(
-    {
-      hostname: "api.dev.runwayml.com",
-      path: "/v1/image_to_video",
-      method: "POST",
-      headers: { Authorization: "Bearer " + config.runwayKey, "X-Runway-Version": "2024-11-06" },
-    },
+    { hostname: "api.dev.runwayml.com", path, method: "POST", headers, timeout: 30000 },
     body
   );
   return { provider: "runway", status: "rendering", jobId: res.id, raw: res };
 }
 
 async function runwayStatus(jobId, config) {
+  const version = config.runwayVersion || "2024-11-06";
   const res = await httpsJSON({
     hostname: "api.dev.runwayml.com",
     path: "/v1/tasks/" + encodeURIComponent(jobId),
     method: "GET",
-    headers: { Authorization: "Bearer " + config.runwayKey, "X-Runway-Version": "2024-11-06" },
+    headers: { Authorization: "Bearer " + config.runwayKey, "X-Runway-Version": version },
   });
   const status = res.status === "SUCCEEDED" ? "ready" : res.status === "FAILED" ? "failed" : "rendering";
   const url = res.output && res.output[0];

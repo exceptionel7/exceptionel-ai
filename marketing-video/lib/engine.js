@@ -38,6 +38,10 @@ function buildConfig() {
     heygenAvatarId: process.env.HEYGEN_AVATAR_ID || "",
     heygenVoiceId: process.env.HEYGEN_VOICE_ID || "",
     runwayKey: process.env.RUNWAY_API_KEY || "",
+    runwayModel: process.env.RUNWAY_MODEL || "gen4.5",
+    runwayVersion: process.env.RUNWAY_VERSION || "2024-11-06",
+    runwayRatio: process.env.RUNWAY_RATIO || "720:1280",
+    runwayDuration: parseInt(process.env.RUNWAY_DURATION || "5", 10),
     metaAccessToken: process.env.META_ACCESS_TOKEN || "",
     igUserId: process.env.META_IG_USER_ID || "",
     fbPageId: process.env.META_FB_PAGE_ID || "",
@@ -110,6 +114,7 @@ function health() {
     ok: true,
     script_ai: c.anthropicKey ? "claude" : "offline",
     video_provider: c.heygenKey ? "heygen" : c.runwayKey ? "runway" : "mock",
+    providers_available: { heygen: !!c.heygenKey, runway: !!c.runwayKey },
     social: {
       instagram: !!(c.metaAccessToken && c.igUserId),
       facebook: !!(c.metaAccessToken && c.fbPageId),
