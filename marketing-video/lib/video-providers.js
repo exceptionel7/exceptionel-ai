@@ -158,7 +158,7 @@ async function pollVideo({ provider, jobId, config }) {
 async function listAvatars(config) {
   const res = await httpsJSON({
     hostname: "api.heygen.com", path: "/v2/avatars", method: "GET",
-    headers: { "X-Api-Key": config.heygenKey }, timeout: 20000,
+    headers: { "X-Api-Key": config.heygenKey }, timeout: 55000,
   });
   const list = (res.data && (res.data.avatars || res.data)) || res.avatars || [];
   return list.slice(0, 25).map((a) => ({
