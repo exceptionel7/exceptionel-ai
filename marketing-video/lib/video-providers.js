@@ -155,17 +155,55 @@ async function pollVideo({ provider, jobId, config }) {
 }
 
 // ---------------- HeyGen : listes d'avatars / voix ----------------
-async function listAvatars(config) {
-  const res = await httpsJSON({
-    hostname: "api.heygen.com", path: "/v2/avatars", method: "GET",
-    headers: { "X-Api-Key": config.heygenKey }, timeout: 55000,
+// La liste publique /v2/avatars est ÉNORME (plusieurs Mo) et provoque un timeout.
+// On lit donc seulement le début du flux, on en extrait quelques avatars par
+// regex, puis on coupe la connexion — rapide et suffisant pour choisir un ID.
+function listAvatars(config) {
+  return new Promise((resolve, reject) => {
+    var done = false;
+    const req = https.request(
+      {
+        hostname: "api.heygen.com",
+        path: "/v2/avatars",
+        method: "GET",
+        headers: { "X-Api-Key": config.heygenKey, Accept: "application/json" },
+        timeout: 30000,
+      },
+      (res) => {
+        if (res.statusCode >= 400) {
+          res.destroy();
+          if (!done) { done = true; reject(new Error("HTTP " + res.statusCode)); }
+          return;
+        }
+        var buf = "";
+        var finish = function () {
+          if (done) return;
+          done = true;
+          try { req.destroy(); } catch (e) {}
+          var ids = [];
+          var names = [];
+          var re = /"avatar_id"\s*:\s*"([^"]+)"/g;
+          var nameRe = /"avatar_name"\s*:\s*"([^"]*)"/g;
+          var m;
+          while ((m = re.exec(buf)) && ids.length < 40) ids.push(m[1]);
+          var n;
+          while ((n = nameRe.exec(buf)) && names.length < 40) names.push(n[1]);
+          var out = [];
+          for (var i = 0; i < ids.length; i++) out.push({ avatar_id: ids[i], name: names[i] || "" });
+          resolve(out.slice(0, 25));
+        };
+        res.on("data", function (c) {
+          buf += c;
+          if (buf.length > 400000) finish(); // ~400 Ko : largement assez d'avatars
+        });
+        res.on("end", finish);
+        res.on("error", finish);
+      }
+    );
+    req.on("timeout", function () { req.destroy(new Error("timeout")); });
+    req.on("error", function (e) { if (!done) { done = true; reject(e); } });
+    req.end();
   });
-  const list = (res.data && (res.data.avatars || res.data)) || res.avatars || [];
-  return list.slice(0, 25).map((a) => ({
-    avatar_id: a.avatar_id || a.id,
-    name: a.avatar_name || a.name || "",
-    gender: a.gender || "",
-  }));
 }
 
 async function listVoices(config) {
