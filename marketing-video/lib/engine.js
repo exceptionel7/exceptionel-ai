@@ -11,6 +11,7 @@
  */
 
 const scriptGen = require("./script-generator");
+const video = require("./video-providers");
 const { runPipeline } = require("./pipeline");
 
 // Produit de démonstration (si aucun produit n'est fourni).
@@ -75,6 +76,28 @@ function listVideos() {
   return { videos, count: videos.length };
 }
 
+// Liste les avatars et voix HeyGen disponibles (pour trouver les bons IDs).
+async function heygenAssets() {
+  const cfg = buildConfig();
+  if (!cfg.heygenKey) return { error: "HEYGEN_API_KEY manquante sur ce projet." };
+  try {
+    const [avatars, voices] = await Promise.all([video.listAvatars(cfg), video.listVoices(cfg)]);
+    return {
+      avatars,
+      voices,
+      hint: "Copiez un avatar_id dans HEYGEN_AVATAR_ID et un voice_id dans HEYGEN_VOICE_ID (variables Vercel), puis redéployez.",
+    };
+  } catch (e) {
+    return { error: String((e && e.message) || e) };
+  }
+}
+
+// Statut d'un rendu vidéo en cours (polling).
+async function videoStatus(q) {
+  q = q || {};
+  return video.pollVideo({ provider: q.provider, jobId: q.jobId, config: buildConfig() });
+}
+
 function health() {
   const c = buildConfig();
   return {
@@ -90,4 +113,4 @@ function health() {
   };
 }
 
-module.exports = { generateScript, generateVideo, listVideos, health, DEMO_PRODUCT };
+module.exports = { generateScript, generateVideo, listVideos, heygenAssets, videoStatus, health, DEMO_PRODUCT };

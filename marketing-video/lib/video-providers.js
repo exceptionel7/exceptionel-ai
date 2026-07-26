@@ -154,4 +154,30 @@ async function pollVideo({ provider, jobId, config }) {
   return { provider: provider || "mock", status: "ready", jobId, url: "https://cdn.exceptionel.ai/mock/video.mp4", mock: true };
 }
 
-module.exports = { generateVideo, pollVideo, chooseProvider };
+// ---------------- HeyGen : listes d'avatars / voix ----------------
+async function listAvatars(config) {
+  const res = await httpsJSON({
+    hostname: "api.heygen.com", path: "/v2/avatars", method: "GET",
+    headers: { "X-Api-Key": config.heygenKey },
+  });
+  const list = (res.data && (res.data.avatars || res.data)) || res.avatars || [];
+  return list.slice(0, 25).map((a) => ({
+    avatar_id: a.avatar_id || a.id,
+    name: a.avatar_name || a.name || "",
+    gender: a.gender || "",
+  }));
+}
+
+async function listVoices(config) {
+  const res = await httpsJSON({
+    hostname: "api.heygen.com", path: "/v2/voices", method: "GET",
+    headers: { "X-Api-Key": config.heygenKey },
+  });
+  const list = (res.data && (res.data.voices || res.data)) || res.voices || [];
+  return list
+    .filter((v) => !v.language || /fr|french|fran/i.test(String(v.language)))
+    .slice(0, 25)
+    .map((v) => ({ voice_id: v.voice_id || v.id, name: v.name || "", language: v.language || "" }));
+}
+
+module.exports = { generateVideo, pollVideo, chooseProvider, listAvatars, listVoices };

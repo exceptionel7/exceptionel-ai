@@ -126,6 +126,33 @@
         }
       });
 
+      function videoInner(v) {
+        return '<div class="video-box"><div class="video-thumb">🎬</div><div>' +
+          '<p style="margin:0 0 6px">Statut : <b>' + esc(v.status || "") + "</b>" +
+          (v.mock ? ' <span class="pill mock">simulée</span>' : "") +
+          (v.status === "rendering" ? ' <span class="pill mock">rendu en cours…</span>' : "") +
+          (v.status === "ready" && !v.mock ? ' <span class="pill" style="background:rgba(52,211,153,.15);color:#34d399">prête ✓</span>' : "") + "</p>" +
+          (v.url ? '<a href="' + esc(v.url) + '" target="_blank" rel="noopener">' + esc(v.url) + "</a>" : "") +
+          (v.warning ? '<p class="muted">⚠️ ' + esc(v.warning) + "</p>" : "") +
+          (v.note ? '<p class="muted">' + esc(v.note) + "</p>" : "") +
+          "</div></div>";
+      }
+
+      function pollStatus(provider, jobId, tries) {
+        tries = tries || 0;
+        if (tries > 30) return; // ~3 min max
+        setTimeout(function () {
+          fetch("/api/status?provider=" + encodeURIComponent(provider) + "&jobId=" + encodeURIComponent(jobId))
+            .then((r) => r.json())
+            .then((v) => {
+              const box = document.getElementById("videoblock");
+              if (box) box.innerHTML = '<span class="k">Vidéo (' + esc(v.provider || provider) + ")</span>" + videoInner(v);
+              if (v.status === "rendering") pollStatus(provider, jobId, tries + 1);
+            })
+            .catch(() => {});
+        }, 6000);
+      }
+
       function render(d) {
         const s = d.script || {};
         const v = d.video || {};
@@ -145,16 +172,15 @@
           (scenes ? '<span class="k">Découpage</span>' + scenes : "") +
           '<p class="muted">⏱ ~' + esc(s.durationSec || 20) + 's · Format 9:16</p></div>' +
 
-          '<div class="block"><span class="k">Vidéo (' + esc(v.provider || "") + ')</span>' +
-          '<div class="video-box"><div class="video-thumb">🎬</div><div>' +
-          '<p style="margin:0 0 6px">Statut : <b>' + esc(v.status || "") + "</b>" + (v.mock ? ' <span class="pill mock">simulée</span>' : "") + "</p>" +
-          (v.url ? '<a href="' + esc(v.url) + '" target="_blank" rel="noopener">' + esc(v.url) + "</a>" : "") +
-          (v.note ? '<p class="muted">' + esc(v.note) + "</p>" : "") +
-          "</div></div></div>" +
+          '<div class="block" id="videoblock"><span class="k">Vidéo (' + esc(v.provider || "") + ")</span>" + videoInner(v) + "</div>" +
 
           '<div class="block"><span class="k">Légende</span><p>' + esc(s.caption || "") + '</p><p class="hashtags">' + (s.hashtags || []).map(esc).join(" ") + "</p></div>" +
 
           '<div class="block"><span class="k">Publications</span>' + (pubs || '<p class="muted">Aucune</p>') + "</div>";
+
+        if (v.status === "rendering" && v.jobId && v.provider && v.provider !== "mock") {
+          pollStatus(v.provider, v.jobId, 0);
+        }
       }
     </script>
   </body>

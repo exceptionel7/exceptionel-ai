@@ -76,6 +76,11 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && urlPath === "/api/script") return sendJSON(res, 200, await engine.generateScript(await readBody(req)));
     if (req.method === "POST" && urlPath === "/api/generate") return sendJSON(res, 200, await engine.generateVideo(await readBody(req)));
     if (req.method === "GET" && urlPath === "/api/videos") return sendJSON(res, 200, engine.listVideos());
+    if (req.method === "GET" && urlPath === "/api/assets") return sendJSON(res, 200, await engine.heygenAssets());
+    if (req.method === "GET" && urlPath === "/api/status") {
+      const u = new URL(req.url, "http://localhost");
+      return sendJSON(res, 200, await engine.videoStatus({ provider: u.searchParams.get("provider"), jobId: u.searchParams.get("jobId") }));
+    }
     if (req.method === "GET" && urlPath === "/api/health") return sendJSON(res, 200, engine.health());
   } catch (e) {
     return sendJSON(res, 500, { error: e.message });
