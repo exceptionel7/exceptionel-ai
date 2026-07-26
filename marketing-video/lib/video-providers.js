@@ -36,8 +36,11 @@ function httpsJSON(options, body) {
           if (res.statusCode >= 400) {
             var base = json.error || json.message || ("HTTP " + res.statusCode);
             var extra = json.errors || json.detail || json.details || json.issues;
-            var msg = (typeof base === "string" ? base : JSON.stringify(base)) +
-              (extra ? " — " + JSON.stringify(extra).slice(0, 400) : "");
+            var detailStr = extra ? JSON.stringify(extra) : JSON.stringify(json);
+            var msg = (typeof base === "string" ? base : JSON.stringify(base));
+            if (detailStr && detailStr !== "{}" && detailStr.indexOf(String(base)) === -1) {
+              msg += " — " + detailStr.slice(0, 400);
+            }
             return reject(new Error(msg));
           }
           resolve(json);
