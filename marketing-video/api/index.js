@@ -41,7 +41,7 @@ module.exports = async (req, res) => {
     if (req.method === "POST" && route.includes("script")) return json(res, 200, await engine.generateScript(await readBody(req)));
     if (req.method === "POST" && route.includes("generate")) return json(res, 200, await engine.generateVideo(await readBody(req)));
     if (req.method === "GET" && route.includes("videos")) return json(res, 200, engine.listVideos());
-    if (req.method === "GET" && route.includes("assets")) return json(res, 200, await engine.heygenAssets());
+    if (req.method === "GET" && route.includes("assets")) return json(res, 200, await engine.heygenAssets(req.query || {}));
     if (req.method === "GET" && route.includes("status")) return json(res, 200, await engine.videoStatus(req.query || {}));
     if (req.method === "GET" && route.includes("health")) return json(res, 200, engine.health());
     return json(res, 404, { error: "not_found", route });

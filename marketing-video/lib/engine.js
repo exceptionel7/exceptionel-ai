@@ -77,19 +77,25 @@ function listVideos() {
 }
 
 // Liste les avatars et voix HeyGen disponibles (pour trouver les bons IDs).
-async function heygenAssets() {
+async function heygenAssets(opts) {
+  opts = opts || {};
   const cfg = buildConfig();
   if (!cfg.heygenKey) return { error: "HEYGEN_API_KEY manquante sur ce projet." };
-  try {
-    const [avatars, voices] = await Promise.all([video.listAvatars(cfg), video.listVoices(cfg)]);
-    return {
-      avatars,
-      voices,
-      hint: "Copiez un avatar_id dans HEYGEN_AVATAR_ID et un voice_id dans HEYGEN_VOICE_ID (variables Vercel), puis redéployez.",
-    };
-  } catch (e) {
-    return { error: String((e && e.message) || e) };
+  var type = opts.type; // "avatars" | "voices" | undefined (les deux)
+  var out = { hint: "Copiez un avatar_id dans HEYGEN_AVATAR_ID et un voice_id dans HEYGEN_VOICE_ID (variables Vercel), puis redéployez." };
+  var jobs = [];
+  if (type !== "voices") {
+    jobs.push(
+      video.listAvatars(cfg).then(function (a) { out.avatars = a; }).catch(function (e) { out.avatars_error = String((e && e.message) || e); })
+    );
   }
+  if (type !== "avatars") {
+    jobs.push(
+      video.listVoices(cfg).then(function (v) { out.voices = v; }).catch(function (e) { out.voices_error = String((e && e.message) || e); })
+    );
+  }
+  await Promise.allSettled(jobs);
+  return out;
 }
 
 // Statut d'un rendu vidéo en cours (polling).

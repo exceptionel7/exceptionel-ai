@@ -26,7 +26,7 @@ function httpsJSON(options, body) {
       headers["Content-Length"] = Buffer.byteLength(payload);
     }
     const req = https.request(
-      { hostname: options.hostname, path: options.path, method: options.method || "GET", headers, timeout: 30000 },
+      { hostname: options.hostname, path: options.path, method: options.method || "GET", headers, timeout: options.timeout || 30000 },
       (res) => {
         let data = "";
         res.on("data", (c) => (data += c));
@@ -158,7 +158,7 @@ async function pollVideo({ provider, jobId, config }) {
 async function listAvatars(config) {
   const res = await httpsJSON({
     hostname: "api.heygen.com", path: "/v2/avatars", method: "GET",
-    headers: { "X-Api-Key": config.heygenKey },
+    headers: { "X-Api-Key": config.heygenKey }, timeout: 20000,
   });
   const list = (res.data && (res.data.avatars || res.data)) || res.avatars || [];
   return list.slice(0, 25).map((a) => ({
@@ -171,7 +171,7 @@ async function listAvatars(config) {
 async function listVoices(config) {
   const res = await httpsJSON({
     hostname: "api.heygen.com", path: "/v2/voices", method: "GET",
-    headers: { "X-Api-Key": config.heygenKey },
+    headers: { "X-Api-Key": config.heygenKey }, timeout: 20000,
   });
   const list = (res.data && (res.data.voices || res.data)) || res.voices || [];
   return list
