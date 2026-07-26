@@ -33,7 +33,13 @@ function httpsJSON(options, body) {
         res.on("end", () => {
           let json = {};
           try { json = JSON.parse(data || "{}"); } catch (e) { json = { raw: data }; }
-          if (res.statusCode >= 400) return reject(new Error(json.message || json.error || ("HTTP " + res.statusCode)));
+          if (res.statusCode >= 400) {
+            var base = json.error || json.message || ("HTTP " + res.statusCode);
+            var extra = json.errors || json.detail || json.details || json.issues;
+            var msg = (typeof base === "string" ? base : JSON.stringify(base)) +
+              (extra ? " — " + JSON.stringify(extra).slice(0, 400) : "");
+            return reject(new Error(msg));
+          }
           resolve(json);
         });
       }
@@ -86,6 +92,11 @@ function runwayPrompt(script) {
   return String(base).replace(/\s+/g, " ").trim().slice(0, 480);
 }
 
+// Vérifie que l'URL pointe bien vers un FICHIER image (pas une page produit).
+function isImageUrl(u) {
+  return /^data:image\//i.test(u) || /^https?:\/\/\S+\.(jpg|jpeg|png|webp|gif)(\?\S*)?$/i.test(u);
+}
+
 async function runwayGenerate(script, productImage, config) {
   // Doc: https://docs.dev.runwayml.com — modèle gen4.5 (texte OU image → vidéo)
   const model = config.runwayModel || "gen4.5";
@@ -95,11 +106,11 @@ async function runwayGenerate(script, productImage, config) {
   const headers = { Authorization: "Bearer " + config.runwayKey, "X-Runway-Version": version };
 
   let path, body;
-  if (productImage) {
+  if (productImage && isImageUrl(productImage)) {
     path = "/v1/image_to_video";
     body = { model, promptImage: productImage, promptText: runwayPrompt(script), ratio, duration };
   } else {
-    // Pas d'image → génération à partir du texte (gen4.5 le permet).
+    // Pas d'image valide → génération à partir du texte (gen4.5 le permet).
     path = "/v1/text_to_video";
     body = { model, promptText: runwayPrompt(script), ratio, duration };
   }
