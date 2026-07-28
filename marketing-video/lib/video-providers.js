@@ -108,19 +108,36 @@ async function runwayGenerate(script, productImage, config) {
   const duration = config.runwayDuration || 5;
   const headers = { Authorization: "Bearer " + config.runwayKey, "X-Runway-Version": version };
 
-  let path, body;
+  const textBody = { model, promptText: runwayPrompt(script), ratio, duration };
+
+  // Avec image valide : on tente image→vidéo, avec repli texte→vidéo si Runway
+  // refuse l'image (CDN inaccessible, format non validé, etc.).
   if (productImage && isImageUrl(productImage)) {
-    path = "/v1/image_to_video";
-    body = { model, promptImage: productImage, promptText: runwayPrompt(script), ratio, duration };
-  } else {
-    // Pas d'image valide → génération à partir du texte (gen4.5 le permet).
-    path = "/v1/text_to_video";
-    body = { model, promptText: runwayPrompt(script), ratio, duration };
+    try {
+      const res = await httpsJSON(
+        { hostname: "api.dev.runwayml.com", path: "/v1/image_to_video", method: "POST", headers, timeout: 30000 },
+        Object.assign({ promptImage: productImage }, textBody)
+      );
+      return { provider: "runway", status: "rendering", jobId: res.id, raw: res };
+    } catch (e) {
+      const res = await httpsJSON(
+        { hostname: "api.dev.runwayml.com", path: "/v1/text_to_video", method: "POST", headers, timeout: 30000 },
+        textBody
+      );
+      return {
+        provider: "runway",
+        status: "rendering",
+        jobId: res.id,
+        raw: res,
+        warning: "Image refusée par Runway (repli texte→vidéo) : " + (e && e.message),
+      };
+    }
   }
 
+  // Sans image : génération texte→vidéo (gen4.5).
   const res = await httpsJSON(
-    { hostname: "api.dev.runwayml.com", path, method: "POST", headers, timeout: 30000 },
-    body
+    { hostname: "api.dev.runwayml.com", path: "/v1/text_to_video", method: "POST", headers, timeout: 30000 },
+    textBody
   );
   return { provider: "runway", status: "rendering", jobId: res.id, raw: res };
 }
