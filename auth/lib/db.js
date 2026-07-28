@@ -12,10 +12,10 @@
 const https = require("https");
 
 function cfg() {
-  return {
-    url: (process.env.SUPABASE_URL || "").replace(/\/+$/, ""),
-    key: process.env.SUPABASE_SERVICE_KEY || "",
-  };
+  var url = (process.env.SUPABASE_URL || "").trim().replace(/\/+$/, "");
+  // Tolère les erreurs courantes : URL contenant déjà /rest/v1 ou /rest.
+  url = url.replace(/\/rest\/v1$/i, "").replace(/\/rest$/i, "").replace(/\/+$/, "");
+  return { url: url, key: (process.env.SUPABASE_SERVICE_KEY || "").trim() };
 }
 function isConfigured() {
   const c = cfg();
@@ -47,8 +47,10 @@ function request(method, path, body) {
           let json = null;
           try { json = data ? JSON.parse(data) : null; } catch (e) { json = { raw: data }; }
           if (res.statusCode >= 400) {
-            const msg = (json && (json.message || json.error || json.hint)) || ("HTTP " + res.statusCode);
-            return reject(new Error(typeof msg === "string" ? msg : JSON.stringify(msg)));
+            const base = (json && (json.message || json.error || json.hint)) || ("HTTP " + res.statusCode);
+            const msg = (typeof base === "string" ? base : JSON.stringify(base)) +
+              " [" + method + " " + u.hostname + u.pathname + "]";
+            return reject(new Error(msg));
           }
           resolve(json);
         });
