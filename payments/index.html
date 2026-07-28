@@ -84,7 +84,7 @@
         return '<div class="card"><div class="cat">' + esc(p.category) + "</div>" +
           "<h3>" + esc(p.name) + "</h3><p>" + esc(p.description) + "</p>" +
           '<div class="price">' + euro(p.price_cents, p.currency) + "</div>" +
-          '<button class="btn" data-id="' + esc(p.id) + '">Acheter</button></div>";
+          '<button class="btn" data-id="' + esc(p.id) + '">Acheter</button></div>';
       }).join("");
 
       grid.querySelectorAll(".btn").forEach(function (btn) {
