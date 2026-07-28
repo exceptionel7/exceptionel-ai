@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exceptionel AI — Sign in</title>
+    <style>
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:
+        radial-gradient(900px 500px at 80% -10%, rgba(124,92,255,.18), transparent), #0f1115; color: #e7e9ee;
+        min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+      .card { width: 380px; max-width: calc(100vw - 32px); background: #171a21; border: 1px solid #262b36; border-radius: 16px; padding: 26px; box-shadow: 0 16px 40px rgba(0,0,0,.35); }
+      .brand { text-align: center; margin-bottom: 8px; }
+      .brand .logo { color: #7c5cff; font-size: 26px; }
+      .brand strong { display: block; font-size: 18px; margin-top: 4px; }
+      .brand small { color: #9aa2b1; font-size: 12px; }
+      .badge { display: block; text-align: center; font-size: 11px; color: #9aa2b1; margin: 6px 0 18px; }
+      .tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+      .tab { flex: 1; text-align: center; padding: 9px; border-radius: 10px; border: 1px solid #262b36; cursor: pointer; font-size: 14px; color: #9aa2b1; }
+      .tab.on { background: #1f232c; color: #fff; border-color: #7c5cff; }
+      label { display: block; font-size: 13px; color: #9aa2b1; margin: 12px 0 6px; }
+      input { width: 100%; background: #0f1115; border: 1px solid #262b36; color: #e7e9ee; border-radius: 10px; padding: 11px 12px; font-size: 14px; }
+      input:focus { outline: none; border-color: #7c5cff; }
+      .btn { width: 100%; margin-top: 18px; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer; background: linear-gradient(135deg,#7c5cff,#5b8cff); color: #fff; font-size: 14px; }
+      .btn:disabled { opacity: .6; cursor: wait; }
+      .msg { font-size: 13px; margin-top: 12px; min-height: 18px; }
+      .msg.err { color: #ff8080; } .msg.ok { color: #34d399; }
+      .signed { text-align: center; }
+      .signed .email { font-weight: 700; }
+      .link { background: none; border: none; color: #7c9cff; cursor: pointer; font-size: 13px; margin-top: 14px; }
+      .field-brand { display: none; }
+      .mode-signup .field-brand { display: block; }
+    </style>
+  </head>
+  <body>
+    <div class="card" id="card">
+      <div class="brand">
+        <div class="logo">✦</div>
+        <strong>Exceptionel AI</strong>
+        <small>Merchant account</small>
+      </div>
+      <span class="badge" id="badge">…</span>
+
+      <div id="auth-view">
+        <div class="tabs">
+          <div class="tab on" id="tab-login">Log in</div>
+          <div class="tab" id="tab-signup">Sign up</div>
+        </div>
+        <form id="form">
+          <div class="field-brand">
+            <label>Brand name</label>
+            <input id="brand" placeholder="Exceptionel" autocomplete="organization" />
+          </div>
+          <label>Email</label>
+          <input id="email" type="email" placeholder="you@company.com" autocomplete="email" />
+          <label>Password</label>
+          <input id="password" type="password" placeholder="At least 8 characters" autocomplete="current-password" />
+          <button class="btn" id="submit" type="submit">Log in</button>
+          <div class="msg" id="msg"></div>
+        </form>
+      </div>
+
+      <div id="signed-view" class="signed" style="display:none">
+        <p>✅ Signed in as</p>
+        <p class="email" id="who"></p>
+        <p id="who-brand" style="color:#9aa2b1;font-size:13px"></p>
+        <button class="link" id="logout">Log out</button>
+      </div>
+    </div>
+
+    <script>
+      var $ = function (s) { return document.querySelector(s); };
+      var mode = "login";
+      var TOKEN_KEY = "exc_auth_token";
+
+      fetch("/api/health").then(function(r){return r.json();}).then(function(h){
+        $("#badge").textContent = "storage: " + h.storage;
+      }).catch(function(){});
+
+      function setMode(m) {
+        mode = m;
+        $("#tab-login").classList.toggle("on", m === "login");
+        $("#tab-signup").classList.toggle("on", m === "signup");
+        $("#auth-view").classList.toggle("mode-signup", m === "signup");
+        $("#submit").textContent = m === "signup" ? "Create account" : "Log in";
+        $("#msg").textContent = "";
+      }
+      $("#tab-login").addEventListener("click", function(){ setMode("login"); });
+      $("#tab-signup").addEventListener("click", function(){ setMode("signup"); });
+
+      function showSignedIn(user) {
+        $("#auth-view").style.display = "none";
+        $("#signed-view").style.display = "block";
+        $("#who").textContent = user.email;
+        $("#who-brand").textContent = user.brand_name ? ("Brand: " + user.brand_name) : "";
+      }
+      function showAuth() {
+        $("#auth-view").style.display = "block";
+        $("#signed-view").style.display = "none";
+      }
+
+      // Restore session
+      var token = localStorage.getItem(TOKEN_KEY);
+      if (token) {
+        fetch("/api/me", { headers: { Authorization: "Bearer " + token } })
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(d){ if (d && d.user) showSignedIn(d.user); else localStorage.removeItem(TOKEN_KEY); })
+          .catch(function(){});
+      }
+
+      $("#form").addEventListener("submit", function (e) {
+        e.preventDefault();
+        var btn = $("#submit"); btn.disabled = true;
+        var msg = $("#msg"); msg.className = "msg"; msg.textContent = "…";
+        var payload = { email: $("#email").value.trim(), password: $("#password").value };
+        if (mode === "signup") payload.brand_name = $("#brand").value.trim();
+        fetch("/api/" + (mode === "signup" ? "signup" : "login"), {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+        }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); })
+          .then(function(res){
+            btn.disabled = false;
+            if (!res.ok) { msg.className = "msg err"; msg.textContent = res.d.error || "Error"; return; }
+            localStorage.setItem(TOKEN_KEY, res.d.token);
+            showSignedIn(res.d.user);
+          }).catch(function(e){ btn.disabled = false; msg.className = "msg err"; msg.textContent = e.message; });
+      });
+
+      $("#logout").addEventListener("click", function () {
+        localStorage.removeItem(TOKEN_KEY);
+        showAuth();
+      });
+    </script>
+  </body>
+</html>
