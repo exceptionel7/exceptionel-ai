@@ -40,7 +40,7 @@ async function runPipeline({ product, brand, platforms, provider, config }) {
     );
   } else {
     // La vidéo n'est pas encore prête (rendu asynchrone) : publication différée.
-    publications = platforms.map((p) => ({ platform: p, status: "queued", note: "en attente du rendu vidéo" }));
+    publications = platforms.map((p) => ({ platform: p, status: "queued", note: "waiting for video render" }));
   }
 
   return {

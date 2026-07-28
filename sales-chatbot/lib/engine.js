@@ -150,30 +150,30 @@ async function diagnose() {
     return {
       key_present: false,
       claude_ok: false,
-      hint: "Aucune ANTHROPIC_API_KEY détectée dans les variables d'environnement Vercel.",
+      hint: "No ANTHROPIC_API_KEY detected in the Vercel environment variables.",
     };
   }
-  // Liste des modèles réellement disponibles pour ce compte (utile en cas d'erreur de modèle).
+  // List of models actually available for this account (useful for model errors).
   let available_models = null;
   try {
     available_models = await claude.listModels(key);
   } catch (e) {
-    available_models = "indisponible: " + String((e && e.message) || e);
+    available_models = "unavailable: " + String((e && e.message) || e);
   }
   try {
     const sample = await claude.ping(key, model);
     return { key_present: true, model, claude_ok: true, sample, available_models };
   } catch (e) {
     const msg = String((e && e.message) || e);
-    let hint = "Erreur inconnue — copiez le message à votre développeur.";
+    let hint = "Unknown error — copy this message to your developer.";
     if (/401|authentication|invalid x-api-key|invalid api/i.test(msg))
-      hint = "Clé API invalide ou mal copiée dans Vercel → recopiez-la puis Redeploy.";
+      hint = "Invalid or mis-pasted API key in Vercel → re-paste it then Redeploy.";
     else if (/credit|billing|quota|balance/i.test(msg))
-      hint = "Crédit Anthropic insuffisant → ajoutez du crédit sur console.anthropic.com (Billing).";
+      hint = "Insufficient Anthropic credit → add credit at console.anthropic.com (Billing).";
     else if (/model|not_found|not found/i.test(msg))
-      hint = "Nom de modèle invalide → définissez ANTHROPIC_MODEL sur un modèle valide.";
+      hint = "Invalid model name → set ANTHROPIC_MODEL to a valid model.";
     else if (/429|rate/i.test(msg))
-      hint = "Limite de débit atteinte → réessayez ou augmentez vos limites.";
+      hint = "Rate limit reached → try again or raise your limits.";
     return { key_present: true, model, claude_ok: false, error: msg, hint, available_models };
   }
 }

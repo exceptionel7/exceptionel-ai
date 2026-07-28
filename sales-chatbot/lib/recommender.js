@@ -41,11 +41,11 @@ function priceCents(p) {
 
 function formatPrice(p) {
   const cents = priceCents(p);
-  const cur = p.currency || "EUR";
+  const cur = p.currency || "USD";
   try {
-    return new Intl.NumberFormat("fr-FR", { style: "currency", currency: cur }).format(cents / 100);
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: cur }).format(cents / 100);
   } catch (e) {
-    return (cents / 100).toFixed(2) + " " + cur;
+    return "$" + (cents / 100).toFixed(2);
   }
 }
 
@@ -142,8 +142,8 @@ const PATTERNS = {
   price: /\b(prix|combien|co[uû]te|tarif|cher|expensive|how much|cost)\b/i,
   shipping: /\b(livraison|exp[eé]di|d[eé]lai|shipping|delivery|deliver)\b/i,
   trust: /\b(avis|garantie|confiance|s[eé]rieux|arnaque|review|warranty|guarantee|s[uû]r)\b/i,
-  buy: /\b(acheter|commander|je le prends|je prends|checkout|payer|buy|order|purchase|panier)\b/i,
-  objectionPrice: /\b(trop cher|cher|budget serr|pas les moyens|too expensive|can'?t afford)\b/i,
+  buy: /\b(buy|order|purchase|checkout|i'?ll take it|i take it|take it|i want it|add to cart|acheter|commander|je le prends|je prends|payer)\b/i,
+  objectionPrice: /\b(too expensive|can'?t afford|too much|expensive|tight budget|trop cher|cher|budget serr)\b/i,
 };
 
 function detect(message) {
@@ -155,17 +155,17 @@ function detect(message) {
 // ---------------- Réponses (objections, closing) ----------------
 const COPY = {
   shipping:
-    "Bonne question ! La livraison est offerte dès 50 € et vos articles arrivent en 2 à 4 jours ouvrés. 🚚 Vous voulez que je vous montre ce qui correspond à votre besoin ?",
+    "Great question! Shipping is free over $50 and your items arrive within 2–4 business days. 🚚 Want me to show you something that fits your needs?",
   trust:
-    "Je comprends. Nos clients notent leurs achats en moyenne 4,7/5, et tout est couvert par une garantie « satisfait ou remboursé » sous 30 jours. 👍 Dites-moi ce que vous recherchez et je vous oriente.",
+    "I understand. Our customers rate their purchases 4.7/5 on average, and everything is covered by a 30-day money-back guarantee. 👍 Tell me what you're looking for and I'll point you in the right direction.",
   objectionPrice:
-    "Je comprends la question du budget. Dites-moi votre fourchette et je vous trouve la meilleure option — on a souvent une alternative au bon rapport qualité/prix.",
+    "I hear you on budget. Tell me your range and I'll find the best option — we often have a great value-for-money alternative.",
   askNeed:
-    "Pour bien vous conseiller, pouvez-vous me dire ce que vous cherchez exactement (usage, style, occasion) ?",
+    "To advise you well, could you tell me exactly what you're looking for (use, style, occasion)?",
   askEmailSoft:
-    "Souhaitez-vous que je vous envoie les détails et une petite réduction de bienvenue par email ? Laissez-moi votre adresse et je vous prépare tout ça. 😊",
+    "Would you like me to email you the details and a little welcome discount? Just leave your address and I'll set it all up. 😊",
   leadThanks:
-    "Parfait, c'est noté ✅ Un conseiller peut aussi vous recontacter si besoin.",
+    "Perfect, noted ✅ An advisor can also follow up with you if needed.",
 };
 
 /**
@@ -194,10 +194,10 @@ function respond(session, message, catalog) {
     const product = session.lastProducts[0];
     const checkout = createCheckout(product, 1);
     toolsUsed.push("create_checkout");
-    actions.push({ type: "checkout", label: `Commander ${product.name} — ${formatPrice(product)}`, url: checkout.url, product_id: product.id });
+    actions.push({ type: "checkout", label: `Order ${product.name} — ${formatPrice(product)}`, url: checkout.url, product_id: product.id });
     reply =
-      `Excellent choix ! 🎉 J'ai préparé votre commande pour **${product.name}** (${formatPrice(product)}). ` +
-      `Cliquez sur le bouton pour finaliser le paiement en toute sécurité.`;
+      `Great choice! 🎉 I've prepared your order for **${product.name}** (${formatPrice(product)}). ` +
+      `Click the button to complete your secure payment.`;
     if (!session.lead.email) {
       reply += " " + COPY.askEmailSoft;
     }
@@ -216,7 +216,7 @@ function respond(session, message, catalog) {
       products = searchProducts(catalog, { query: q, max_price_cents: budget, limit: 2 });
       toolsUsed.push("search_products");
       session.lastProducts = products;
-      if (products.length) reply = `Avec un budget de ${(budget / 100).toFixed(0)} €, voici ma meilleure recommandation :`;
+      if (products.length) reply = `With a budget of $${(budget / 100).toFixed(0)}, here's my best recommendation:`;
     }
     return { reply, products, actions, lead: session.lead, tools: toolsUsed };
   }
@@ -229,7 +229,7 @@ function respond(session, message, catalog) {
   if ((email || budget) && !intents.buy && meaningfulNoContact.length <= 1) {
     const last = session.lastProducts[0];
     if (last) {
-      reply = COPY.leadThanks + ` Souhaitez-vous finaliser votre commande de ${last.name} (${formatPrice(last)}) ? Dites simplement « je le prends ». 😊`;
+      reply = COPY.leadThanks + ` Would you like to complete your order for ${last.name} (${formatPrice(last)})? Just say “I'll take it”. 😊`;
       return { reply, products: [last], actions, lead: session.lead, tools: toolsUsed };
     }
     reply = COPY.leadThanks + " " + COPY.askNeed;
@@ -241,7 +241,7 @@ function respond(session, message, catalog) {
   if (intents.greeting && meaningful.length <= 1) {
     return {
       reply:
-        "Bonjour et bienvenue ! 👋 Je suis votre conseiller. Dites-moi ce que vous cherchez et je vous trouve le produit idéal.",
+        "Hello and welcome! 👋 I'm your advisor. Tell me what you're looking for and I'll find the perfect product for you.",
       products, actions, lead: session.lead, tools: toolsUsed,
     };
   }
@@ -256,14 +256,14 @@ function respond(session, message, catalog) {
   if (products.length) {
     const top = products[0];
     reply =
-      `D'après ce que vous décrivez, je vous recommande **${top.name}** (${formatPrice(top)}) : ` +
+      `Based on what you describe, I'd recommend **${top.name}** (${formatPrice(top)}): ` +
       `${top.description || top.shortPitch || ""}`.trim();
-    if (products.length > 1) reply += ` J'ai aussi 1 ou 2 autres options à vous proposer.`;
+    if (products.length > 1) reply += ` I also have 1 or 2 other options for you.`;
     // Progression vers la qualification / closing
     if (!session.lead.email) {
-      reply += " Voulez-vous que je vous réserve le vôtre ? " + COPY.askEmailSoft;
+      reply += " Want me to reserve yours? " + COPY.askEmailSoft;
     } else {
-      reply += ` Souhaitez-vous le commander maintenant ?`;
+      reply += ` Would you like to order it now?`;
     }
   } else {
     reply = COPY.askNeed;

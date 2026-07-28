@@ -19,7 +19,7 @@ function cfg() {
   return {
     secret: process.env.STRIPE_SECRET_KEY || "",
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
-    currency: process.env.STRIPE_CURRENCY || "eur",
+    currency: process.env.STRIPE_CURRENCY || "usd",
   };
 }
 
@@ -54,7 +54,7 @@ async function createCheckout(body) {
       url: (origin || "") + "/?paid=1&demo=1&session=" + demoId,
       id: demoId,
       mock: true,
-      note: "Paiement simulé (mode démo). Ajoutez STRIPE_SECRET_KEY pour de vrais paiements.",
+      note: "Simulated payment (demo mode). Add STRIPE_SECRET_KEY for real payments.",
     };
   }
 
@@ -95,14 +95,14 @@ function handleWebhook(rawBody, sigHeader) {
   // Si un secret de webhook est configuré, on vérifie la signature.
   if (c.webhookSecret) {
     var ok = webhook.verifySignature(rawBody, sigHeader, c.webhookSecret, 300);
-    if (!ok) return { status: 400, body: { error: "signature invalide" } };
+    if (!ok) return { status: 400, body: { error: "invalid signature" } };
   }
 
   var event;
   try {
     event = JSON.parse(Buffer.isBuffer(rawBody) ? rawBody.toString("utf8") : rawBody || "{}");
   } catch (e) {
-    return { status: 400, body: { error: "payload invalide" } };
+    return { status: 400, body: { error: "invalid payload" } };
   }
 
   if (event.type === "checkout.session.completed") {

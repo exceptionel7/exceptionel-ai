@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Exceptionel AI — Génération Vidéo Marketing</title>
+    <title>Exceptionel AI — Marketing Video Generation</title>
     <style>
       * { box-sizing: border-box; }
       body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: #0f1115; color: #e7e9ee; }
@@ -19,7 +19,7 @@
       .panel { background: #171a21; border: 1px solid #262b36; border-radius: 14px; padding: 20px; }
       label { display: block; font-size: 13px; color: #9aa2b1; margin: 12px 0 6px; }
       label:first-child { margin-top: 0; }
-      input, textarea { width: 100%; background: #0f1115; border: 1px solid #262b36; color: #e7e9ee; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-family: inherit; }
+      input, textarea, select { width: 100%; background: #0f1115; border: 1px solid #262b36; color: #e7e9ee; border-radius: 10px; padding: 10px 12px; font-size: 14px; font-family: inherit; }
       textarea { resize: vertical; }
       .platforms { display: flex; gap: 8px; flex-wrap: wrap; }
       .pf { flex: 1; text-align: center; border: 1px solid #262b36; border-radius: 10px; padding: 8px; cursor: pointer; font-size: 13px; user-select: none; }
@@ -47,47 +47,47 @@
   <body>
     <header>
       <span class="logo">✦</span>
-      <div><strong>Exceptionel AI</strong><small>Génération Vidéo Marketing</small></div>
+      <div><strong>Exceptionel AI</strong><small>Marketing Video Generation</small></div>
       <span class="badge" id="mode-badge">…</span>
     </header>
 
     <div class="wrap">
-      <h1>De la fiche produit à la vidéo publiée 🎬</h1>
+      <h1>From product page to published video 🎬</h1>
       <p class="lead">
-        L'IA écrit le script, l'envoie à un service de génération vidéo, puis
-        publie sur Instagram, TikTok et Facebook. <span class="muted">(Mode démo :
-        script réel, rendu et publication simulés tant que les clés ne sont pas
-        configurées.)</span>
+        The AI writes the script, sends it to a video generation service, then
+        publishes to Instagram, TikTok and Facebook. <span class="muted">(Demo mode:
+        real script, simulated rendering and publishing until the keys are
+        configured.)</span>
       </p>
 
       <div class="grid">
         <form class="panel" id="form">
-          <label>Nom du produit</label>
-          <input id="name" value="Casque Serenity" />
+          <label>Product name</label>
+          <input id="name" value="Serenity Headphones" />
           <label>Description</label>
-          <textarea id="desc" rows="3">Casque sans fil à réduction de bruit active, 40h d'autonomie et son haute résolution.</textarea>
-          <label>Prix (€)</label>
+          <textarea id="desc" rows="3">Wireless headphones with active noise cancellation, 40h battery life and high-resolution sound.</textarea>
+          <label>Price ($)</label>
           <input id="price" type="number" value="199" />
-          <label>Image produit (URL, optionnel — pour Runway image→vidéo)</label>
-          <input id="imgurl" placeholder="https://…/photo-produit.jpg (laisser vide = texte→vidéo)" />
-          <label>Fournisseur vidéo</label>
+          <label>Product image (URL, optional — for Runway image→video)</label>
+          <input id="imgurl" placeholder="https://…/product-photo.jpg (leave empty = text→video)" />
+          <label>Video provider</label>
           <select id="provider">
             <option value="auto">Auto</option>
             <option value="runway">Runway</option>
             <option value="heygen">HeyGen (avatar)</option>
-            <option value="mock">Démo (mock)</option>
+            <option value="mock">Demo (mock)</option>
           </select>
-          <label>Publier sur</label>
+          <label>Publish to</label>
           <div class="platforms">
             <div class="pf on" data-p="instagram">Instagram</div>
             <div class="pf on" data-p="tiktok">TikTok</div>
             <div class="pf on" data-p="facebook">Facebook</div>
           </div>
-          <button class="btn" id="go" type="submit">Générer la vidéo 🎬</button>
+          <button class="btn" id="go" type="submit">Generate video 🎬</button>
         </form>
 
         <div class="panel out" id="out">
-          <p class="muted">Le script, la vidéo et les publications apparaîtront ici.</p>
+          <p class="muted">The script, video and publications will appear here.</p>
         </div>
       </div>
     </div>
@@ -104,23 +104,23 @@
       );
 
       fetch("/api/health").then((r) => r.json()).then((h) => {
-        $("#mode-badge").textContent = "script: " + h.script_ai + " · vidéo: " + h.video_provider;
+        $("#mode-badge").textContent = "script: " + h.script_ai + " · video: " + h.video_provider;
       }).catch(() => {});
 
       function esc(s) { return String(s == null ? "" : s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
 
       $("#form").addEventListener("submit", async (e) => {
         e.preventDefault();
-        const go = $("#go"); go.disabled = true; go.textContent = "Génération en cours…";
-        $("#out").innerHTML = '<p class="muted">⏳ L\'IA écrit le script, génère la vidéo et prépare les publications…</p>';
+        const go = $("#go"); go.disabled = true; go.textContent = "Generating…";
+        $("#out").innerHTML = '<p class="muted">⏳ The AI is writing the script, generating the video and preparing the publications…</p>';
         const product = {
           id: "prod-demo",
           name: $("#name").value.trim(),
           description: $("#desc").value.trim(),
           price_cents: Math.round((parseFloat($("#price").value) || 0) * 100),
-          currency: "EUR",
+          currency: "USD",
           image_url: $("#imgurl").value.trim(),
-          url: "https://exceptionel.com/produits/prod-demo",
+          url: "https://exceptionel.com/products/prod-demo",
         };
         const provider = $("#provider").value;
         try {
@@ -131,18 +131,18 @@
           const data = await res.json();
           render(data);
         } catch (err) {
-          $("#out").innerHTML = '<p class="muted">Erreur : ' + esc(err.message) + "</p>";
+          $("#out").innerHTML = '<p class="muted">Error: ' + esc(err.message) + "</p>";
         } finally {
-          go.disabled = false; go.textContent = "Générer la vidéo 🎬";
+          go.disabled = false; go.textContent = "Generate video 🎬";
         }
       });
 
       function videoInner(v) {
         return '<div class="video-box"><div class="video-thumb">🎬</div><div>' +
-          '<p style="margin:0 0 6px">Statut : <b>' + esc(v.status || "") + "</b>" +
-          (v.mock ? ' <span class="pill mock">simulée</span>' : "") +
-          (v.status === "rendering" ? ' <span class="pill mock">rendu en cours…</span>' : "") +
-          (v.status === "ready" && !v.mock ? ' <span class="pill" style="background:rgba(52,211,153,.15);color:#34d399">prête ✓</span>' : "") + "</p>" +
+          '<p style="margin:0 0 6px">Status: <b>' + esc(v.status || "") + "</b>" +
+          (v.mock ? ' <span class="pill mock">simulated</span>' : "") +
+          (v.status === "rendering" ? ' <span class="pill mock">rendering…</span>' : "") +
+          (v.status === "ready" && !v.mock ? ' <span class="pill" style="background:rgba(52,211,153,.15);color:#34d399">ready ✓</span>' : "") + "</p>" +
           (v.url ? '<a href="' + esc(v.url) + '" target="_blank" rel="noopener">' + esc(v.url) + "</a>" : "") +
           (v.warning ? '<p class="muted">⚠️ ' + esc(v.warning) + "</p>" : "") +
           (v.note ? '<p class="muted">' + esc(v.note) + "</p>" : "") +
@@ -157,7 +157,7 @@
             .then((r) => r.json())
             .then((v) => {
               const box = document.getElementById("videoblock");
-              if (box) box.innerHTML = '<span class="k">Vidéo (' + esc(v.provider || provider) + ")</span>" + videoInner(v);
+              if (box) box.innerHTML = '<span class="k">Video (' + esc(v.provider || provider) + ")</span>" + videoInner(v);
               if (v.status === "rendering") pollStatus(provider, jobId, tries + 1);
             })
             .catch(() => {});
@@ -167,11 +167,11 @@
       function render(d) {
         const s = d.script || {};
         const v = d.video || {};
-        const scenes = (s.scenes || []).map((sc) => '<div class="scene"><b>' + esc(sc.t) + "</b> — " + esc(sc.visual) + '<br/><span class="muted">« ' + esc(sc.text) + " »</span></div>").join("");
+        const scenes = (s.scenes || []).map((sc) => '<div class="scene"><b>' + esc(sc.t) + "</b> — " + esc(sc.visual) + '<br/><span class="muted">“ ' + esc(sc.text) + " ”</span></div>").join("");
         const pubs = (d.publications || []).map((p) => {
           const cls = p.status === "published" ? (p.mock ? "mock" : "ok") : (p.status === "failed" ? "err" : "mock");
-          const label = p.mock ? "simulé" : p.status;
-          const link = p.post_url ? ' · <a href="' + esc(p.post_url) + '" target="_blank" rel="noopener">voir</a>' : "";
+          const label = p.mock ? "simulated" : p.status;
+          const link = p.post_url ? ' · <a href="' + esc(p.post_url) + '" target="_blank" rel="noopener">view</a>' : "";
           return '<div class="pub"><span>' + esc(p.platform) + link + '</span><span class="pill ' + cls + '">' + esc(label) + "</span></div>";
         }).join("");
 
@@ -179,15 +179,15 @@
           '<div class="block"><span class="k">Script (' + esc(s.source || "") + ')</span>' +
           "<h3>" + esc(s.hook || "") + "</h3>" +
           "<p>" + (s.body || []).map(esc).join("<br/>") + "</p>" +
-          '<p><b>CTA :</b> ' + esc(s.cta || "") + "</p>" +
-          (scenes ? '<span class="k">Découpage</span>' + scenes : "") +
-          '<p class="muted">⏱ ~' + esc(s.durationSec || 20) + 's · Format 9:16</p></div>' +
+          '<p><b>CTA:</b> ' + esc(s.cta || "") + "</p>" +
+          (scenes ? '<span class="k">Storyboard</span>' + scenes : "") +
+          '<p class="muted">⏱ ~' + esc(s.durationSec || 20) + 's · 9:16 format</p></div>' +
 
-          '<div class="block" id="videoblock"><span class="k">Vidéo (' + esc(v.provider || "") + ")</span>" + videoInner(v) + "</div>" +
+          '<div class="block" id="videoblock"><span class="k">Video (' + esc(v.provider || "") + ")</span>" + videoInner(v) + "</div>" +
 
-          '<div class="block"><span class="k">Légende</span><p>' + esc(s.caption || "") + '</p><p class="hashtags">' + (s.hashtags || []).map(esc).join(" ") + "</p></div>" +
+          '<div class="block"><span class="k">Caption</span><p>' + esc(s.caption || "") + '</p><p class="hashtags">' + (s.hashtags || []).map(esc).join(" ") + "</p></div>" +
 
-          '<div class="block"><span class="k">Publications</span>' + (pubs || '<p class="muted">Aucune</p>') + "</div>";
+          '<div class="block"><span class="k">Publications</span>' + (pubs || '<p class="muted">None</p>') + "</div>";
 
         if (v.status === "rendering" && v.jobId && v.provider && v.provider !== "mock") {
           pollStatus(v.provider, v.jobId, 0);

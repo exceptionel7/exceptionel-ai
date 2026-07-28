@@ -16,16 +16,16 @@ const { runPipeline } = require("./pipeline");
 
 // Produit de démonstration (si aucun produit n'est fourni).
 const DEMO_PRODUCT = {
-  id: "casque-serenity",
-  name: "Casque Serenity",
+  id: "serenity-headphones",
+  name: "Serenity Headphones",
   category: "Audio",
   price_cents: 19900,
-  currency: "EUR",
-  tags: ["casque", "audio", "sans fil", "voyage"],
+  currency: "USD",
+  tags: ["headphones", "audio", "wireless", "travel"],
   description:
-    "Casque sans fil à réduction de bruit active, 40h d'autonomie et son haute résolution.",
+    "Wireless headphones with active noise cancellation, 40h battery life and high-resolution sound.",
   image_url: "",
-  url: "https://exceptionel.com/produits/casque-serenity",
+  url: "https://exceptionel.com/products/serenity-headphones",
 };
 
 const videos = []; // stockage en mémoire (prototype)
@@ -84,9 +84,9 @@ function listVideos() {
 async function heygenAssets(opts) {
   opts = opts || {};
   const cfg = buildConfig();
-  if (!cfg.heygenKey) return { error: "HEYGEN_API_KEY manquante sur ce projet." };
+  if (!cfg.heygenKey) return { error: "HEYGEN_API_KEY missing on this project." };
   var type = opts.type; // "avatars" | "voices" | undefined (les deux)
-  var out = { hint: "Copiez un avatar_id dans HEYGEN_AVATAR_ID et un voice_id dans HEYGEN_VOICE_ID (variables Vercel), puis redéployez." };
+  var out = { hint: "Copy an avatar_id into HEYGEN_AVATAR_ID and a voice_id into HEYGEN_VOICE_ID (Vercel variables), then redeploy." };
   var jobs = [];
   if (type !== "voices") {
     jobs.push(

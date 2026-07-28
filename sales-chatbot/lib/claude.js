@@ -66,13 +66,13 @@ const TOOLS = [
 function buildSystemPrompt(brand) {
   const b = brand || {};
   return (
-    `Tu es un conseiller de vente expert et honnête pour ${b.brand_name || "la boutique"}. ` +
-    `Ton : ${b.tone || "chaleureux et professionnel"}. Public : ${b.target_audience || "clients en ligne"}. ` +
-    `Objectif : comprendre le besoin, recommander 1 à 3 produits PERTINENTS du catalogue, ` +
-    `lever les objections (prix, doute, livraison) et proposer de conclure la vente. ` +
-    `Utilise TOUJOURS l'outil search_products avant de recommander ; ne cite jamais un produit ou un prix inexistant. ` +
-    `Qualifie le prospect via capture_lead dès que possible (email, besoin, budget). ` +
-    `Quand un produit est choisi, propose create_checkout. Réponds dans la langue du client, de façon concise.`
+    `You are an expert, honest sales advisor for ${b.brand_name || "the store"}. ` +
+    `Tone: ${b.tone || "warm and professional"}. Audience: ${b.target_audience || "online shoppers"}. ` +
+    `Goal: understand the need, recommend 1 to 3 RELEVANT products from the catalog, ` +
+    `handle objections (price, doubt, shipping) and offer to close the sale. ` +
+    `ALWAYS use the search_products tool before recommending; never mention a product or price that doesn't exist. ` +
+    `Qualify the lead via capture_lead as soon as possible (email, need, budget). ` +
+    `When a product is chosen, offer create_checkout. Reply in the customer's language, concisely. Prices are in USD.`
   );
 }
 
@@ -125,7 +125,7 @@ function runTool(name, input, ctx) {
     session.lastProducts = products;
     return products.map((p) => ({
       id: p.id, name: p.name, price_cents: rec.priceCents(p),
-      currency: p.currency || "EUR", description: p.description || p.shortPitch || "",
+      currency: p.currency || "USD", description: p.description || p.shortPitch || "",
       url: p.url,
     }));
   }
@@ -136,7 +136,7 @@ function runTool(name, input, ctx) {
     const product = (catalog.find((p) => p.id === (input || {}).product_id)) || session.lastProducts[0];
     if (!product) return { error: "product_not_found" };
     const checkout = rec.createCheckout(product, (input || {}).quantity || 1);
-    ctx.collectedActions.push({ type: "checkout", label: `Commander ${product.name}`, url: checkout.url, product_id: product.id });
+    ctx.collectedActions.push({ type: "checkout", label: `Order ${product.name}`, url: checkout.url, product_id: product.id });
     return checkout;
   }
   return { error: "unknown_tool" };

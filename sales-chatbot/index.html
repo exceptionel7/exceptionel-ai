@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Boutique Démo — Exceptionel</title>
+    <title>Demo Store — Exceptionel</title>
     <style>
       * { box-sizing: border-box; }
       body {
@@ -62,35 +62,34 @@
     <header>
       <div class="logo">✦ Exceptionel<span> Store</span></div>
       <nav>
-        <a href="#">Boutique</a>
-        <a href="/api/leads" target="_blank">Leads (démo)</a>
-        <a href="/api/health" target="_blank">Statut</a>
+        <a href="#">Shop</a>
+        <a href="/api/leads" target="_blank">Leads (demo)</a>
+        <a href="/api/health" target="_blank">Status</a>
       </nav>
     </header>
 
     <section class="hero">
-      <h1>Une boutique de démonstration</h1>
+      <h1>A demonstration store</h1>
       <p>
-        Cette page simule le site d'un marchand. En bas à droite, le widget
-        <strong>Exceptionel AI</strong> est intégré via une seule balise
-        <code>&lt;script&gt;</code>. Cliquez dessus et discutez : il connaît le
-        catalogue, recommande des produits et vous guide vers l'achat. 💬
+        This page simulates a merchant's website. In the bottom-right corner, the
+        <strong>Exceptionel AI</strong> widget is embedded via a single
+        <code>&lt;script&gt;</code> tag. Click it and chat: it knows the catalog,
+        recommends products and guides you to purchase. 💬
       </p>
     </section>
 
     <div class="wrap">
       <div class="note">
-        💡 Essayez par exemple : « <em>je cherche un casque pour voyager</em> »,
-        « <em>c'est trop cher, j'ai un budget de 80€</em> », ou « <em>je le
-        prends</em> ». Puis donnez un email pour voir la qualification du lead
-        (onglet « Leads »).
+        💡 Try for example: “<em>I'm looking for headphones for traveling</em>”,
+        “<em>that's too expensive, my budget is $80</em>”, or “<em>I'll take
+        it</em>”. Then give an email to see lead qualification (“Leads” tab).
       </div>
       <div class="grid" id="grid"></div>
     </div>
 
-    <footer>Boutique de démonstration — propulsée par Exceptionel AI</footer>
+    <footer>Demonstration store — powered by Exceptionel AI</footer>
 
-    <!-- Rendu du catalogue de démo -->
+    <!-- Render the demo catalog -->
     <script>
       fetch("/demo/catalog.sample.json")
         .then((r) => r.json())
@@ -99,9 +98,9 @@
           products.forEach((p) => {
             const el = document.createElement("div");
             el.className = "card";
-            const price = new Intl.NumberFormat("fr-FR", {
+            const price = new Intl.NumberFormat("en-US", {
               style: "currency",
-              currency: p.currency || "EUR",
+              currency: p.currency || "USD",
             }).format((p.price_cents || 0) / 100);
             el.innerHTML =
               '<div class="cat">' + p.category + "</div>" +
@@ -113,12 +112,12 @@
         });
     </script>
 
-    <!-- ===== LE WIDGET EMBARQUABLE : une seule ligne à coller ===== -->
+    <!-- ===== THE EMBEDDABLE WIDGET: a single line to paste ===== -->
     <script
       src="/public/embed.js"
       data-api=""
       data-key="demo"
-      data-title="Conseiller Exceptionel"
+      data-title="Exceptionel Advisor"
       data-accent="#7c5cff"
     ></script>
   </body>

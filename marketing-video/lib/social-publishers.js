@@ -135,7 +135,7 @@ function mockPublish(platform, video) {
     external_post_id: id,
     post_url: urls[platform] || "https://exemple.com/" + id,
     mock: true,
-    note: "Publication simulée (mode démo). Connectez le compte (OAuth) pour publier réellement.",
+    note: "Simulated publication (demo mode). Connect the account (OAuth) to publish for real.",
   };
 }
 
@@ -149,7 +149,7 @@ function hasCreds(platform, config) {
 
 async function publish({ platform, video, caption, config }) {
   config = config || {};
-  if (!video || !video.url) return { platform, status: "failed", error: "vidéo manquante" };
+  if (!video || !video.url) return { platform, status: "failed", error: "missing video" };
   try {
     if (hasCreds(platform, config)) {
       if (platform === "instagram") return await publishInstagram(video, caption, config);

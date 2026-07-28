@@ -17,12 +17,12 @@ function priceLabel(product) {
     : Math.round((parseFloat(product.price) || 0) * 100);
   if (!cents) return "";
   try {
-    return new Intl.NumberFormat("fr-FR", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: product.currency || "EUR",
+      currency: product.currency || "USD",
     }).format(cents / 100);
   } catch (e) {
-    return (cents / 100).toFixed(2) + " €";
+    return "$" + (cents / 100).toFixed(2);
   }
 }
 
@@ -37,29 +37,29 @@ function slugify(s) {
 
 // ---------------- Moteur hors-ligne (gabarits) ----------------
 function offlineScript(product, brand) {
-  const name = product.name || "notre nouveauté";
+  const name = product.name || "our latest product";
   const price = priceLabel(product);
   const desc = product.description || product.shortPitch || "";
   const brandName = (brand && brand.brand_name) || "Exceptionel";
   const features = (product.features && product.features.length
     ? product.features
-    : (desc ? [desc] : ["Qualité premium", "Livraison rapide"]));
+    : (desc ? [desc] : ["Premium quality", "Fast shipping"]));
 
-  const hook = `Vous cherchez ${product.category ? product.category.toLowerCase() : "le produit parfait"} ? Regardez ça 👀`;
+  const hook = `Looking for ${product.category ? product.category.toLowerCase() : "the perfect product"}? Watch this 👀`;
   const body = [
-    `Voici ${name}${price ? " — " + price : ""}.`,
+    `Meet ${name}${price ? " — " + price : ""}.`,
     ...features.slice(0, 3).map((f) => `✅ ${f}`),
   ];
-  const cta = `Disponible maintenant sur ${brandName.toLowerCase()}.com 🛒`;
+  const cta = `Available now at ${brandName.toLowerCase()}.com 🛒`;
   const voiceover = [hook, ...body, cta].join(" ");
   const tags = (product.tags || []).slice(0, 4).map((t) => "#" + String(t).replace(/\s+/g, ""));
-  const hashtags = ["#" + slugify(brandName), ...tags, "#nouveaute", "#shopping"].slice(0, 8);
-  const caption = `${name} : ${desc || "à découvrir absolument"} ${price ? "(" + price + ") " : ""}✨\n${cta}`;
+  const hashtags = ["#" + slugify(brandName), ...tags, "#new", "#shopping"].slice(0, 8);
+  const caption = `${name}: ${desc || "a must-see"} ${price ? "(" + price + ") " : ""}✨\n${cta}`;
 
   const scenes = [
-    { t: "0-3s", visual: `Gros plan sur ${name}, ambiance dynamique`, text: hook },
-    { t: "3-15s", visual: "Plans produit + bénéfices en surimpression", text: body.join(" ") },
-    { t: "15-20s", visual: "Logo + appel à l'action", text: cta },
+    { t: "0-3s", visual: `Close-up on ${name}, dynamic vibe`, text: hook },
+    { t: "3-15s", visual: "Product shots + benefits overlay", text: body.join(" ") },
+    { t: "15-20s", visual: "Logo + call to action", text: cta },
   ];
 
   return {
@@ -78,29 +78,29 @@ function offlineScript(product, brand) {
 // ---------------- Génération via Claude ----------------
 async function claudeScript(product, brand, apiKey, model) {
   const system =
-    "Tu es un directeur créatif spécialisé en vidéos courtes (Reels/TikTok, format 9:16, 15-30s) " +
-    "pour l'e-commerce. Tu écris en français, ton " + ((brand && brand.tone) || "dynamique et vendeur") + ". " +
-    "Réponds UNIQUEMENT par un objet JSON valide, sans texte autour.";
+    "You are a creative director specialized in short-form videos (Reels/TikTok, 9:16 format, 15-30s) " +
+    "for e-commerce. You write in English, tone " + ((brand && brand.tone) || "dynamic and persuasive") + ". " +
+    "Reply ONLY with a valid JSON object, no surrounding text.";
   const user =
-    "Génère un script de vidéo marketing pour ce produit.\n\n" +
-    "Produit: " + JSON.stringify({
+    "Generate a marketing video script for this product.\n\n" +
+    "Product: " + JSON.stringify({
       name: product.name,
       description: product.description || product.shortPitch,
       price: priceLabel(product),
       category: product.category,
       tags: product.tags,
     }) + "\n" +
-    "Marque: " + JSON.stringify({ name: (brand && brand.brand_name) || "Exceptionel", tone: brand && brand.tone }) + "\n\n" +
-    "Schéma JSON attendu:\n" +
+    "Brand: " + JSON.stringify({ name: (brand && brand.brand_name) || "Exceptionel", tone: brand && brand.tone }) + "\n\n" +
+    "Expected JSON schema:\n" +
     "{\n" +
-    '  "hook": "accroche 0-3s percutante",\n' +
-    '  "body": ["2 à 4 courtes phrases de bénéfices"],\n' +
-    '  "cta": "appel à l\'action final",\n' +
-    '  "voiceover": "texte complet de la voix off",\n' +
-    '  "caption": "légende pour le post avec emojis",\n' +
+    '  "hook": "punchy 0-3s hook",\n' +
+    '  "body": ["2 to 4 short benefit sentences"],\n' +
+    '  "cta": "final call to action",\n' +
+    '  "voiceover": "full voice-over text",\n' +
+    '  "caption": "social post caption with emojis",\n' +
     '  "hashtags": ["#..."],\n' +
     '  "durationSec": 20,\n' +
-    '  "scenes": [{"t":"0-3s","visual":"description du plan","text":"texte à l\'écran"}]\n' +
+    '  "scenes": [{"t":"0-3s","visual":"shot description","text":"on-screen text"}]\n' +
     "}";
 
   const json = await ai.completeJSON({ apiKey, model, system, user, maxTokens: 1200 });
@@ -131,7 +131,7 @@ async function generateScript(product, brand, opts) {
     } catch (e) {
       const s = offlineScript(product || {}, brand || {});
       s.source = "offline-fallback";
-      s.warning = "Claude indisponible: " + (e && e.message);
+      s.warning = "Claude unavailable: " + (e && e.message);
       return s;
     }
   }

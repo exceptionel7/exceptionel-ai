@@ -164,7 +164,7 @@ function mockGenerate(script) {
     jobId: "mock_" + Date.now(),
     url: "https://cdn.exceptionel.ai/mock/" + (slug || "video") + ".mp4",
     mock: true,
-    note: "Vidéo simulée (mode démo). Ajoutez HEYGEN_API_KEY ou RUNWAY_API_KEY pour un rendu réel.",
+    note: "Simulated video (demo mode). Add HEYGEN_API_KEY or RUNWAY_API_KEY for a real render.",
   };
 }
 
@@ -185,7 +185,7 @@ async function generateVideo({ provider, script, productImage, config }) {
   } catch (e) {
     // Repli mock si l'appel réel échoue (clé/quota/réseau).
     const m = mockGenerate(script);
-    m.warning = chosen + " indisponible: " + (e && e.message);
+    m.warning = chosen + " unavailable: " + (e && e.message);
     return m;
   }
   return mockGenerate(script);

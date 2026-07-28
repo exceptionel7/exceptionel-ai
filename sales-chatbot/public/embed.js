@@ -21,7 +21,7 @@
   var cfg = {
     api: (script && script.getAttribute("data-api")) || window.location.origin,
     key: (script && script.getAttribute("data-key")) || "demo",
-    title: (script && script.getAttribute("data-title")) || "Assistant de vente",
+    title: (script && script.getAttribute("data-title")) || "Sales Assistant",
     accent: (script && script.getAttribute("data-accent")) || "#7c5cff",
   };
 
@@ -96,10 +96,10 @@
   panel.innerHTML =
     '<div class="hd"><button class="x">×</button><strong>' +
     esc(cfg.title) +
-    "</strong><small>En ligne • répond en quelques secondes</small></div>" +
+    "</strong><small>Online • replies in seconds</small></div>" +
     '<div class="msgs"></div>' +
-    '<form class="ft"><input type="text" placeholder="Écrivez votre message…" autocomplete="off"/><button type="submit">➤</button></form>' +
-    '<div class="pw">Propulsé par Exceptionel AI</div>';
+    '<form class="ft"><input type="text" placeholder="Type your message…" autocomplete="off"/><button type="submit">➤</button></form>' +
+    '<div class="pw">Powered by Exceptionel AI</div>';
   root.appendChild(panel);
 
   var msgsEl = panel.querySelector(".msgs");
@@ -135,7 +135,7 @@
         "<b>" + esc(p.name) + "</b>" +
         '<div class="p">' + esc(p.price) + "</div>" +
         "<div>" + esc((p.description || "").slice(0, 120)) + "</div>" +
-        (p.url && p.url !== "#" ? '<a href="' + esc(p.url) + '" target="_blank" rel="noopener">Voir le produit →</a>' : "");
+        (p.url && p.url !== "#" ? '<a href="' + esc(p.url) + '" target="_blank" rel="noopener">View product →</a>' : "");
       wrap.appendChild(c);
     });
     (actions || []).forEach(function (a) {
@@ -145,7 +145,7 @@
         link.href = a.url;
         link.target = "_blank";
         link.rel = "noopener";
-        link.textContent = a.label || "Finaliser l'achat →";
+        link.textContent = a.label || "Complete purchase →";
         wrap.appendChild(link);
       }
     });
@@ -173,7 +173,7 @@
       })
       .catch(function () {
         typing.remove();
-        addMsg("Désolé, une erreur est survenue. Réessayez.", "bot");
+        addMsg("Sorry, something went wrong. Please try again.", "bot");
       });
   }
 
@@ -183,7 +183,7 @@
     if (!greeted) {
       greeted = true;
       addMsg(
-        "Bonjour ! 👋 Je suis votre conseiller. Dites-moi ce que vous cherchez et je vous trouve le produit idéal.",
+        "Hi! 👋 I'm your advisor. Tell me what you're looking for and I'll find the perfect product for you.",
         "bot"
       );
     }
