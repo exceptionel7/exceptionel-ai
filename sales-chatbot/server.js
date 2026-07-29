@@ -118,6 +118,9 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && urlPath === "/api/health") {
       return sendJSON(res, 200, engine.health());
     }
+    if (req.method === "GET" && urlPath === "/api/dbcheck") {
+      return sendJSON(res, 200, await engine.dbcheck());
+    }
     if (req.method === "GET" && urlPath === "/api/diag") {
       return sendJSON(res, 200, await engine.diagnose());
     }

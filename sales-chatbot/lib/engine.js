@@ -157,6 +157,27 @@ async function getLeads(userId) {
   return { leads: rows, count: rows.length };
 }
 
+// Diagnostic : teste réellement l'écriture/lecture dans la table `leads`.
+async function dbcheck() {
+  const info = { configured: db.isConfigured() };
+  if (!db.isConfigured()) {
+    info.error = "SUPABASE non configuré sur ce projet (SUPABASE_URL / SUPABASE_SERVICE_KEY manquants).";
+    return info;
+  }
+  try {
+    const row = await db.insert("leads", { user_id: "__diag__", email: "diag@example.com", status: "diag" });
+    info.insert_ok = true;
+    info.inserted_id = row && row.id;
+    const rows = await db.select("leads", { user_id: "__diag__" });
+    info.select_count = rows.length;
+    info.ok = true;
+  } catch (e) {
+    info.ok = false;
+    info.error = String((e && e.message) || e);
+  }
+  return info;
+}
+
 // ---------------- Santé ----------------
 function health() {
   return {
@@ -205,4 +226,4 @@ async function diagnose() {
   }
 }
 
-module.exports = { handleChat, setConfig, getLeads, health, diagnose, DEFAULT_CATALOG };
+module.exports = { handleChat, setConfig, getLeads, dbcheck, health, diagnose, DEFAULT_CATALOG };

@@ -70,6 +70,9 @@ module.exports = async (req, res) => {
       const userId = identity.resolveUserId(req.headers, req.query || {});
       return json(res, 200, await engine.getLeads(userId));
     }
+    if (req.method === "GET" && route.includes("dbcheck")) {
+      return json(res, 200, await engine.dbcheck());
+    }
     if (req.method === "GET" && route.includes("health")) {
       return json(res, 200, engine.health());
     }
