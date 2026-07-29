@@ -21,6 +21,7 @@
   var cfg = {
     api: (script && script.getAttribute("data-api")) || window.location.origin,
     key: (script && script.getAttribute("data-key")) || "demo",
+    merchant: (script && (script.getAttribute("data-merchant") || script.getAttribute("data-key"))) || "demo",
     title: (script && script.getAttribute("data-title")) || "Sales Assistant",
     accent: (script && script.getAttribute("data-accent")) || "#7c5cff",
   };
@@ -161,7 +162,7 @@
     fetch(cfg.api.replace(/\/$/, "") + "/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Public-Key": cfg.key },
-      body: JSON.stringify({ sessionId: sessionId, message: message }),
+      body: JSON.stringify({ sessionId: sessionId, message: message, merchantId: cfg.merchant }),
     })
       .then(function (r) {
         return r.json();

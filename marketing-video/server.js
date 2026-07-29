@@ -32,6 +32,7 @@ const path = require("path");
 })();
 
 const engine = require("./lib/engine");
+const identity = require("./lib/identity");
 
 const PORT = process.env.PORT || 5000;
 const ROOT = __dirname;
@@ -74,8 +75,16 @@ const server = http.createServer(async (req, res) => {
   }
   try {
     if (req.method === "POST" && urlPath === "/api/script") return sendJSON(res, 200, await engine.generateScript(await readBody(req)));
-    if (req.method === "POST" && urlPath === "/api/generate") return sendJSON(res, 200, await engine.generateVideo(await readBody(req)));
-    if (req.method === "GET" && urlPath === "/api/videos") return sendJSON(res, 200, engine.listVideos());
+    if (req.method === "POST" && urlPath === "/api/generate") {
+      const body = await readBody(req);
+      body.__userId = identity.resolveUserId(req.headers, body);
+      return sendJSON(res, 200, await engine.generateVideo(body));
+    }
+    if (req.method === "GET" && urlPath === "/api/videos") {
+      const u = new URL(req.url, "http://localhost");
+      const userId = identity.resolveUserId(req.headers, { merchantId: u.searchParams.get("merchantId") });
+      return sendJSON(res, 200, await engine.listVideos(userId));
+    }
     if (req.method === "GET" && urlPath === "/api/assets") {
       const ua = new URL(req.url, "http://localhost");
       return sendJSON(res, 200, await engine.heygenAssets({ type: ua.searchParams.get("type") }));

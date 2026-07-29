@@ -27,6 +27,7 @@ const path = require("path");
 })();
 
 const engine = require("./lib/engine");
+const identity = require("./lib/identity");
 
 const PORT = process.env.PORT || 6000;
 const ROOT = __dirname;
@@ -69,14 +70,19 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && urlPath === "/api/checkout") {
       const raw = await readRaw(req);
       let body = {}; try { body = JSON.parse(raw || "{}"); } catch (e) {}
+      body.__userId = identity.resolveUserId(req.headers, body);
       return sendJSON(res, 200, await engine.createCheckout(body));
     }
     if (req.method === "POST" && urlPath === "/api/webhook") {
       const raw = await readRaw(req); // corps BRUT (indispensable pour la signature)
-      const result = engine.handleWebhook(raw, req.headers["stripe-signature"]);
+      const result = await engine.handleWebhook(raw, req.headers["stripe-signature"]);
       return sendJSON(res, result.status, result.body);
     }
-    if (req.method === "GET" && urlPath === "/api/orders") return sendJSON(res, 200, engine.listOrders());
+    if (req.method === "GET" && urlPath === "/api/orders") {
+      const u = new URL(req.url, "http://localhost");
+      const userId = identity.resolveUserId(req.headers, { merchantId: u.searchParams.get("merchantId") });
+      return sendJSON(res, 200, await engine.listOrders(userId));
+    }
     if (req.method === "GET" && urlPath === "/api/health") return sendJSON(res, 200, engine.health());
   } catch (e) {
     return sendJSON(res, 500, { error: e.message });

@@ -81,6 +81,10 @@ function createCheckoutSession(secretKey, opts) {
     if (p.id) pairs.push(["metadata[product_id]", p.id]);
   }
 
+  // Marchand propriétaire (pour rattacher la commande via le webhook).
+  if (opts.userId) pairs.push(["metadata[user_id]", opts.userId]);
+  if (opts.userId) pairs.push(["client_reference_id", opts.userId]);
+
   return stripeRequest(secretKey, "POST", "/v1/checkout/sessions", pairs);
 }
 

@@ -8,10 +8,11 @@
  */
 
 const engine = require("../lib/engine");
+const identity = require("../lib/identity");
 
 function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
 }
 
@@ -58,13 +59,16 @@ module.exports = async (req, res) => {
 
   try {
     if (req.method === "POST" && route.includes("chat")) {
-      return json(res, 200, await engine.handleChat(await readBody(req)));
+      const body = await readBody(req);
+      body.__userId = identity.resolveUserId(req.headers, body);
+      return json(res, 200, await engine.handleChat(body));
     }
     if (req.method === "POST" && route.includes("config")) {
       return json(res, 200, engine.setConfig(await readBody(req)));
     }
     if (req.method === "GET" && route.includes("leads")) {
-      return json(res, 200, engine.getLeads());
+      const userId = identity.resolveUserId(req.headers, req.query || {});
+      return json(res, 200, await engine.getLeads(userId));
     }
     if (req.method === "GET" && route.includes("health")) {
       return json(res, 200, engine.health());

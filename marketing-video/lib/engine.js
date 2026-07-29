@@ -12,6 +12,7 @@
 
 const scriptGen = require("./script-generator");
 const video = require("./video-providers");
+const db = require("./db");
 const { runPipeline } = require("./pipeline");
 
 // Produit de démonstration (si aucun produit n'est fourni).
@@ -27,8 +28,6 @@ const DEMO_PRODUCT = {
   image_url: "",
   url: "https://exceptionel.com/products/serenity-headphones",
 };
-
-const videos = []; // stockage en mémoire (prototype)
 
 function buildConfig() {
   return {
@@ -72,12 +71,39 @@ async function generateVideo(body) {
     config: buildConfig(),
   });
   const record = { id: "vid_" + Date.now(), createdAt: new Date().toISOString(), ...result };
-  videos.push(record);
+
+  // Persistance (base ou mémoire), rattachée au marchand.
+  try {
+    await db.insert("videos", {
+      user_id: body.__userId || "demo",
+      product_id: (result.product && result.product.id) || product.id || "",
+      script: Object.assign({}, result.script, { product_name: (result.product && result.product.name) || product.name || "" }),
+      provider: result.video && result.video.provider,
+      status: result.video && result.video.status,
+      video_url: (result.video && result.video.url) || null,
+      caption: result.script && result.script.caption,
+    });
+  } catch (e) {
+    console.error("[Exceptionel][videos] persist failed →", e && e.message);
+  }
   return record;
 }
 
-function listVideos() {
-  return { videos, count: videos.length };
+async function listVideos(userId) {
+  const rows = await db.select("videos", { user_id: userId || "demo" });
+  return {
+    videos: rows.map(function (r) {
+      return {
+        id: r.id,
+        product: { id: r.product_id, name: (r.script && r.script.product_name) || r.product_id || "Product" },
+        script: r.script || {},
+        video: { provider: r.provider, status: r.status, url: r.video_url },
+        publications: [],
+        createdAt: r.created_at,
+      };
+    }),
+    count: rows.length,
+  };
 }
 
 // Liste les avatars et voix HeyGen disponibles (pour trouver les bons IDs).
@@ -120,7 +146,7 @@ function health() {
       facebook: !!(c.metaAccessToken && c.fbPageId),
       tiktok: !!c.tiktokAccessToken,
     },
-    videos: videos.length,
+    storage: db.isConfigured() ? "postgres" : "in-memory (demo)",
   };
 }
 

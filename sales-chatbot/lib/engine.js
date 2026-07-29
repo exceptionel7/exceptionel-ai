@@ -16,6 +16,7 @@
 
 const rec = require("./recommender");
 const claude = require("./claude");
+const db = require("./db");
 
 // Catalogue par défaut chargé via require (tracé et embarqué par les bundlers,
 // y compris celui de Vercel).
@@ -26,9 +27,8 @@ try {
   DEFAULT_CATALOG = [];
 }
 
-// ---------------- État en mémoire ----------------
+// ---------------- État en mémoire (sessions de conversation) ----------------
 const sessions = new Map();
-const leads = [];
 
 function getSession(id) {
   if (!sessions.has(id)) {
@@ -44,12 +44,26 @@ function getSession(id) {
   return sessions.get(id);
 }
 
-function recordLead(sessionId, lead) {
-  if (!lead || (!lead.email && !lead.need && !lead.budget_cents)) return;
-  const existing = leads.find((l) => l.sessionId === sessionId);
-  const entry = { sessionId, ...lead, updatedAt: new Date().toISOString() };
-  if (existing) Object.assign(existing, entry);
-  else leads.push({ createdAt: new Date().toISOString(), ...entry });
+// Persiste un prospect QUALIFIÉ (avec email) une seule fois par session,
+// rattaché au marchand (user_id). Stocké en base (ou en mémoire en démo).
+async function recordLead(userId, session) {
+  const lead = (session && session.lead) || {};
+  if (!lead.email) return; // on ne persiste que les leads qualifiés
+  if (session.leadInserted) return;
+  session.leadInserted = true;
+  try {
+    await db.insert("leads", {
+      user_id: userId || "demo",
+      email: lead.email,
+      need: lead.need || null,
+      budget_cents: lead.budget_cents || null,
+      score: lead.score || null,
+      status: lead.status || "qualified",
+    });
+  } catch (e) {
+    session.leadInserted = false; // autorise une nouvelle tentative
+    console.error("[Exceptionel][leads] persist failed →", e && e.message);
+  }
 }
 
 // ---------------- Chat ----------------
@@ -96,7 +110,7 @@ async function handleChat(body) {
   }
 
   session.messages.push({ role: "assistant", content: result.reply });
-  recordLead(sessionId, session.lead);
+  await recordLead(body.__userId, session);
 
   return {
     reply: result.reply,
@@ -125,9 +139,10 @@ function setConfig(body) {
   return { ok: true, products: (session.catalog || DEFAULT_CATALOG).length };
 }
 
-// ---------------- Leads ----------------
-function getLeads() {
-  return { leads, count: leads.length };
+// ---------------- Leads (persistés, par marchand) ----------------
+async function getLeads(userId) {
+  const rows = await db.select("leads", { user_id: userId || "demo" });
+  return { leads: rows, count: rows.length };
 }
 
 // ---------------- Santé ----------------
@@ -135,9 +150,9 @@ function health() {
   return {
     ok: true,
     mode: process.env.ANTHROPIC_API_KEY ? "claude" : "offline",
+    storage: db.isConfigured() ? "postgres" : "in-memory (demo)",
     catalog: DEFAULT_CATALOG.length,
     sessions: sessions.size,
-    leads: leads.length,
   };
 }
 

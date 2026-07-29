@@ -6,10 +6,11 @@
  */
 
 const engine = require("../lib/engine");
+const identity = require("../lib/identity");
 
 function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
 }
 
@@ -39,8 +40,15 @@ module.exports = async (req, res) => {
 
   try {
     if (req.method === "POST" && route.includes("script")) return json(res, 200, await engine.generateScript(await readBody(req)));
-    if (req.method === "POST" && route.includes("generate")) return json(res, 200, await engine.generateVideo(await readBody(req)));
-    if (req.method === "GET" && route.includes("videos")) return json(res, 200, engine.listVideos());
+    if (req.method === "POST" && route.includes("generate")) {
+      const body = await readBody(req);
+      body.__userId = identity.resolveUserId(req.headers, body);
+      return json(res, 200, await engine.generateVideo(body));
+    }
+    if (req.method === "GET" && route.includes("videos")) {
+      const userId = identity.resolveUserId(req.headers, req.query || {});
+      return json(res, 200, await engine.listVideos(userId));
+    }
     if (req.method === "GET" && route.includes("assets")) return json(res, 200, await engine.heygenAssets(req.query || {}));
     if (req.method === "GET" && route.includes("status")) return json(res, 200, await engine.videoStatus(req.query || {}));
     if (req.method === "GET" && route.includes("health")) return json(res, 200, engine.health());

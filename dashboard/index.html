@@ -39,7 +39,10 @@
             <div class="kpi"><strong id="kpi-leads">–</strong><span>Leads</span></div>
             <div class="kpi"><strong id="kpi-qual" class="accent">–</strong><span>Qualified leads</span></div>
             <div class="kpi"><strong id="kpi-videos">–</strong><span>Videos generated</span></div>
-            <div class="kpi"><strong id="kpi-pubs">–</strong><span>Publications</span></div>
+            <div class="kpi"><strong id="kpi-orders">–</strong><span>Orders</span></div>
+          </div>
+          <div class="banner" id="acct-note" style="background:rgba(124,92,255,.1);border-color:rgba(124,92,255,.35);color:#b9a8ff">
+            👤 <b id="acct-state">Not signed in</b> — sign in under <b>Settings</b> to see your own account's data. Without login, demo data is shown.
           </div>
 
           <div class="panel">
@@ -121,12 +124,32 @@
         <!-- SETTINGS -->
         <section id="view-settings" class="view">
           <div class="topline"><h1>Settings</h1></div>
-          <p class="sub">Connect the dashboard to the URLs of your modules deployed on Vercel.</p>
+
           <div class="panel">
+            <h3>Sign in (merchant account)</h3>
+            <p class="hint">Log in with your Exceptionel AI account so the dashboard shows YOUR leads, videos and orders.</p>
+            <label>Auth module URL</label>
+            <input id="s-auth" placeholder="https://exceptionel-auth.vercel.app" />
+            <label>Email</label>
+            <input id="s-email" type="email" placeholder="you@company.com" />
+            <label>Password</label>
+            <input id="s-password" type="password" placeholder="Your password" />
+            <div class="row">
+              <button class="btn btn-primary" id="login-btn">🔐 Log in</button>
+              <button class="btn" id="logout-btn">Log out</button>
+            </div>
+            <div class="msg" id="login-msg"></div>
+          </div>
+
+          <div class="panel">
+            <h3>Module URLs</h3>
+            <p class="hint">Connect the dashboard to your modules deployed on Vercel.</p>
             <label>Chatbot module URL</label>
             <input id="s-chatbot" placeholder="https://exceptionel-ai.vercel.app" />
             <label>Video module URL</label>
             <input id="s-video" placeholder="https://exceptionel-video.vercel.app" />
+            <label>Payments module URL</label>
+            <input id="s-payments" placeholder="https://exceptionel-pay.vercel.app" />
             <button class="btn btn-primary" id="save-settings">💾 Save & test</button>
             <div class="msg" id="settings-msg"></div>
           </div>

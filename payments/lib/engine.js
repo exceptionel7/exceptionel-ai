@@ -12,8 +12,7 @@
 
 const stripe = require("./stripe");
 const webhook = require("./webhook");
-
-var orders = []; // stockage en mémoire (prototype)
+const db = require("./db");
 
 function cfg() {
   return {
@@ -40,16 +39,17 @@ async function createCheckout(body) {
   // Mode démo (aucune clé Stripe) : on simule un paiement réussi.
   if (!c.secret) {
     var demoId = "cs_demo_" + Date.now();
-    orders.push({
-      id: demoId,
-      product: product.name || "Produit",
-      product_id: product.id || "",
-      amount_cents: product.price_cents || 0,
-      currency: c.currency,
-      status: "paid",
-      mock: true,
-      createdAt: new Date().toISOString(),
-    });
+    try {
+      await db.insert("orders", {
+        user_id: body.__userId || "demo",
+        stripe_id: demoId,
+        product_id: product.id || "",
+        amount_cents: product.price_cents || 0,
+        currency: c.currency,
+        email: body.email || "",
+        status: "paid",
+      });
+    } catch (e) { console.error("[Exceptionel][orders] persist failed →", e && e.message); }
     return {
       url: (origin || "") + "/?paid=1&demo=1&session=" + demoId,
       id: demoId,
@@ -68,28 +68,33 @@ async function createCheckout(body) {
     successUrl: successUrl,
     cancelUrl: cancelUrl,
     customerEmail: body.email,
+    userId: body.__userId, // rattache la commande au marchand (metadata)
   });
   return { url: session.url, id: session.id, mode: mode };
 }
 
-function recordOrderFromSession(s) {
-  if (!s || orders.some(function (o) { return o.id === s.id; })) return;
-  orders.push({
-    id: s.id,
-    amount_cents: s.amount_total,
-    currency: s.currency,
-    email: (s.customer_details && s.customer_details.email) || s.customer_email || "",
-    product_id: (s.metadata && s.metadata.product_id) || "",
-    status: s.payment_status || "paid",
-    createdAt: new Date().toISOString(),
-  });
+async function recordOrderFromSession(s) {
+  if (!s) return;
+  try {
+    await db.insert("orders", {
+      user_id: (s.metadata && s.metadata.user_id) || s.client_reference_id || "demo",
+      stripe_id: s.id,
+      amount_cents: s.amount_total,
+      currency: s.currency,
+      email: (s.customer_details && s.customer_details.email) || s.customer_email || "",
+      product_id: (s.metadata && s.metadata.product_id) || "",
+      status: s.payment_status || "paid",
+    });
+  } catch (e) {
+    console.error("[Exceptionel][orders] persist failed →", e && e.message);
+  }
 }
 
 /**
  * Traite un webhook Stripe. rawBody DOIT être le corps brut (string/Buffer).
  * @returns {{status:number, body:object}}
  */
-function handleWebhook(rawBody, sigHeader) {
+async function handleWebhook(rawBody, sigHeader) {
   var c = cfg();
 
   // Si un secret de webhook est configuré, on vérifie la signature.
@@ -106,14 +111,15 @@ function handleWebhook(rawBody, sigHeader) {
   }
 
   if (event.type === "checkout.session.completed") {
-    recordOrderFromSession(event.data && event.data.object);
+    await recordOrderFromSession(event.data && event.data.object);
     // En prod : notifier le marchand (email/websocket), décrémenter le stock…
   }
   return { status: 200, body: { received: true, type: event.type } };
 }
 
-function listOrders() {
-  return { orders: orders, count: orders.length };
+async function listOrders(userId) {
+  var rows = await db.select("orders", { user_id: userId || "demo" });
+  return { orders: rows, count: rows.length };
 }
 
 function health() {
@@ -124,7 +130,7 @@ function health() {
     payments: c.secret ? "stripe" : "demo",
     key_type: keyType,
     webhook_configured: !!c.webhookSecret,
-    orders: orders.length,
+    storage: db.isConfigured() ? "postgres" : "in-memory (demo)",
   };
 }
 

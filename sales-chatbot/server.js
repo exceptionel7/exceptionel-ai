@@ -34,6 +34,7 @@ const path = require("path");
 })();
 
 const engine = require("./lib/engine");
+const identity = require("./lib/identity");
 
 const PORT = process.env.PORT || 4000;
 const ROOT = __dirname;
@@ -102,13 +103,17 @@ const server = http.createServer(async (req, res) => {
   // --- API (déléguée au moteur partagé) ---
   try {
     if (req.method === "POST" && urlPath === "/api/chat") {
-      return sendJSON(res, 200, await engine.handleChat(await readBody(req)));
+      const body = await readBody(req);
+      body.__userId = identity.resolveUserId(req.headers, body);
+      return sendJSON(res, 200, await engine.handleChat(body));
     }
     if (req.method === "POST" && urlPath === "/api/config") {
       return sendJSON(res, 200, engine.setConfig(await readBody(req)));
     }
     if (req.method === "GET" && urlPath === "/api/leads") {
-      return sendJSON(res, 200, engine.getLeads());
+      const u = new URL(req.url, "http://localhost");
+      const userId = identity.resolveUserId(req.headers, { merchantId: u.searchParams.get("merchantId") });
+      return sendJSON(res, 200, await engine.getLeads(userId));
     }
     if (req.method === "GET" && urlPath === "/api/health") {
       return sendJSON(res, 200, engine.health());
