@@ -96,3 +96,25 @@ payments/
 
 > ⚠️ Prototype : commandes en mémoire. En production → PostgreSQL + notifications
 > marchand (voir `../ARCHITECTURE.md`).
+
+
+---
+
+## 🗄️ Persistence & merchant accounts (optional)
+
+By default, orders are stored **in memory** (demo). To persist them **durably**
+and scope them **per merchant**, set the SAME variables as the `auth` module:
+
+| Variable | Role |
+| --- | --- |
+| `AUTH_JWT_SECRET` | Verify the merchant JWT — **must be identical on every module** |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_KEY` | Supabase `service_role` key (server only) |
+
+Run `../auth/schema.sql` once in Supabase to create the tables.
+
+When creating a checkout (`POST /api/checkout`), send the merchant JWT as
+`Authorization: Bearer <token>` (or a `merchantId` in the body). The merchant id
+is stored in the Stripe session `metadata.user_id` + `client_reference_id`, so the
+`checkout.session.completed` webhook records the order under the right merchant.
+`GET /api/orders` returns only that merchant's orders (by token, or `?merchantId=`).

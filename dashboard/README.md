@@ -73,3 +73,23 @@ dashboard/
 ├── vercel.json   Sert les fichiers statiques
 └── README.md
 ```
+
+
+---
+
+## 🔐 Sign in to see your own data
+
+The dashboard can show **your merchant account's** real data (leads, videos,
+orders) instead of demo data.
+
+1. Go to **Settings**.
+2. Fill **Auth module URL** + your email/password → **Log in**.
+3. The dashboard stores the returned JWT and sends it as
+   `Authorization: Bearer <token>` to every module.
+4. Each module returns only your account's data (scoped by `user_id`).
+
+Also fill the **Chatbot / Video / Payments** module URLs in Settings.
+
+> Requirement: all modules must share the **same `AUTH_JWT_SECRET`** (and be
+> connected to the same Supabase project) so they can verify your token and
+> read/write the shared tables. See each module's README and `../auth/README.md`.

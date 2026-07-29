@@ -158,3 +158,27 @@ sales-chatbot/
 > ⚠️ Prototype : la persistance est **en mémoire**. En production, les
 > conversations, leads et commandes sont stockés dans PostgreSQL, et les
 > paiements passent par Stripe (voir `../ARCHITECTURE.md`).
+
+
+---
+
+## 🗄️ Persistence & merchant accounts (optional)
+
+By default, leads are stored **in memory** (demo). To persist them **durably**
+and scope them **per merchant**, set the SAME variables as the `auth` module:
+
+| Variable | Role |
+| --- | --- |
+| `AUTH_JWT_SECRET` | Verify the merchant JWT — **must be identical on every module** |
+| `SUPABASE_URL` | Supabase project URL (`https://xxxx.supabase.co`) |
+| `SUPABASE_SERVICE_KEY` | Supabase `service_role` key (server only) |
+
+Run `../auth/schema.sql` once in Supabase to create the tables.
+
+**Merchant identity** for a lead is resolved from, in order:
+1. `Authorization: Bearer <token>` (JWT issued by the `auth` module), or
+2. a `merchantId` sent by the widget — set `data-merchant="<your user_id>"` on the `<script>` tag, or
+3. `"demo"` fallback.
+
+Only **qualified** leads (with an email) are persisted. `GET /api/leads` returns
+only the current merchant's leads (by token, or `?merchantId=<user_id>`).

@@ -107,3 +107,24 @@ marketing-video/
     ├── pipeline.js          Orchestration script → vidéo → publication
     └── engine.js            Config + actions (partagé serveur/serverless)
 ```
+
+
+---
+
+## 🗄️ Persistence & merchant accounts (optional)
+
+By default, generated videos are stored **in memory** (demo). To persist them
+**durably** and scope them **per merchant**, set the SAME variables as the
+`auth` module:
+
+| Variable | Role |
+| --- | --- |
+| `AUTH_JWT_SECRET` | Verify the merchant JWT — **must be identical on every module** |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_KEY` | Supabase `service_role` key (server only) |
+
+Run `../auth/schema.sql` once in Supabase to create the tables.
+
+Send the merchant JWT as `Authorization: Bearer <token>` (or a `merchantId` in
+the body) when calling `POST /api/generate`. `GET /api/videos` then returns only
+that merchant's videos (by token, or `?merchantId=<user_id>`).
