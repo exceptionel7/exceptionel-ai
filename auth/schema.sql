@@ -13,9 +13,11 @@ create table if not exists users (
 );
 
 -- Leads captured by the sales chatbot
+-- NOTE: user_id is TEXT (not uuid) so it accepts the merchant's uuid, a public
+-- widget identifier, or the "demo" fallback.
 create table if not exists leads (
   id            uuid primary key default gen_random_uuid(),
-  user_id       uuid references users(id) on delete cascade,
+  user_id       text,
   email         text,
   need          text,
   budget_cents  integer,
@@ -27,7 +29,7 @@ create table if not exists leads (
 -- Marketing videos generated
 create table if not exists videos (
   id            uuid primary key default gen_random_uuid(),
-  user_id       uuid references users(id) on delete cascade,
+  user_id       text,
   product_id    text,
   script        jsonb,
   provider      text,
@@ -40,7 +42,7 @@ create table if not exists videos (
 -- Orders (from Stripe checkout)
 create table if not exists orders (
   id            uuid primary key default gen_random_uuid(),
-  user_id       uuid references users(id) on delete cascade,
+  user_id       text,
   stripe_id     text,
   product_id    text,
   amount_cents  integer,
