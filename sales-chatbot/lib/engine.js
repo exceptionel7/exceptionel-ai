@@ -110,6 +110,18 @@ async function handleChat(body) {
   }
 
   session.messages.push({ role: "assistant", content: result.reply });
+
+  // Capture d'email ROBUSTE : si l'utilisateur a écrit un email dans son
+  // message, on qualifie le lead (même si Claude n'a pas appelé capture_lead).
+  const foundEmail = rec.extractEmail(message);
+  if (foundEmail) {
+    session.lead = session.lead || {};
+    if (!session.lead.email) session.lead.email = foundEmail;
+    if (!session.lead.need) session.lead.need = session.messages.length ? session.messages[0].content : null;
+    if (!session.lead.status) session.lead.status = "qualified";
+    if (session.lead.score == null) session.lead.score = 50;
+  }
+
   await recordLead(body.__userId, session);
 
   return {
