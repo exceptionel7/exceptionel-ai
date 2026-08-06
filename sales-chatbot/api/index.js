@@ -73,6 +73,12 @@ module.exports = async (req, res) => {
     if (req.method === "GET" && route.includes("dbcheck")) {
       return json(res, 200, await engine.dbcheck());
     }
+    if (req.method === "GET" && route.includes("catalog")) {
+      return json(res, 200, engine.getCatalog());
+    }
+    if (req.method === "POST" && route.includes("catalog")) {
+      return json(res, 200, await engine.refreshCatalog());
+    }
     if (req.method === "GET" && route.includes("health")) {
       return json(res, 200, engine.health());
     }

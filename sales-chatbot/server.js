@@ -118,6 +118,12 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && urlPath === "/api/health") {
       return sendJSON(res, 200, engine.health());
     }
+    if (req.method === "GET" && urlPath === "/api/catalog") {
+      return sendJSON(res, 200, engine.getCatalog());
+    }
+    if (req.method === "POST" && urlPath === "/api/catalog/refresh") {
+      return sendJSON(res, 200, await engine.refreshCatalog());
+    }
     if (req.method === "GET" && urlPath === "/api/dbcheck") {
       return sendJSON(res, 200, await engine.dbcheck());
     }

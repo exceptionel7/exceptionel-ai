@@ -17,6 +17,7 @@
 const rec = require("./recommender");
 const claude = require("./claude");
 const db = require("./db");
+const cj = require("./cj-catalog");
 
 // Catalogue par défaut chargé via require (tracé et embarqué par les bundlers,
 // y compris celui de Vercel).
@@ -26,6 +27,15 @@ try {
 } catch (e) {
   DEFAULT_CATALOG = [];
 }
+
+// Au démarrage : tente de charger le vrai catalogue CJ (asynchrone).
+(async function initCatalog() {
+  const live = await cj.loadCatalog();
+  if (live && live.length) {
+    DEFAULT_CATALOG = live;
+    console.log("[Exceptionel] CJ catalog loaded:", live.length, "products");
+  }
+})();
 
 // ---------------- État en mémoire (sessions de conversation) ----------------
 const sessions = new Map();
@@ -185,8 +195,23 @@ function health() {
     mode: process.env.ANTHROPIC_API_KEY ? "claude" : "offline",
     storage: db.isConfigured() ? "postgres" : "in-memory (demo)",
     catalog: DEFAULT_CATALOG.length,
+    catalog_source: cj.cjConfigured() ? "cj-dropshipping" : "demo-json",
     sessions: sessions.size,
   };
+}
+
+// Recharge le catalogue CJ (manuellement, ou sur un timer).
+async function refreshCatalog() {
+  const live = await cj.loadCatalog();
+  if (live && live.length) {
+    DEFAULT_CATALOG = live;
+    return { ok: true, products: live.length, source: "cj-dropshipping" };
+  }
+  return { ok: false, products: DEFAULT_CATALOG.length, source: "demo-json (CJ unavailable)" };
+}
+
+function getCatalog() {
+  return { products: DEFAULT_CATALOG.slice(0, 50), count: DEFAULT_CATALOG.length, source: cj.cjConfigured() ? "cj-dropshipping" : "demo-json" };
 }
 
 // ---------------- Diagnostic Claude ----------------
@@ -226,4 +251,4 @@ async function diagnose() {
   }
 }
 
-module.exports = { handleChat, setConfig, getLeads, dbcheck, health, diagnose, DEFAULT_CATALOG };
+module.exports = { handleChat, setConfig, getLeads, dbcheck, refreshCatalog, getCatalog, health, diagnose, DEFAULT_CATALOG };
