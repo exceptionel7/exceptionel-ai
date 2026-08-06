@@ -191,21 +191,19 @@
         if (data && (data.reply || (data.products && data.products.length))) {
           addMsg(data.reply || "…", "bot");
           addProducts(data.products, data.actions);
-        } else if (data && data.error) {
-          addMsg("[server error " + res.status + "] " + data.error, "bot");
         } else {
-          // Réponse non-JSON (souvent une page 404/504) : on affiche un extrait
-          // pour diagnostiquer où va vraiment la requête.
           addMsg(
-            "[" + res.status + " @ " + endpoint + "] " +
-              String(res.body || "").replace(/\s+/g, " ").slice(0, 200),
+            "Sorry, I couldn't process that right now. Please try again in a moment.",
             "bot"
           );
         }
       })
-      .catch(function (err) {
+      .catch(function () {
         typing.remove();
-        addMsg("[network error → " + endpoint + "] " + (err && err.message ? err.message : err), "bot");
+        addMsg(
+          "Sorry, something went wrong reaching the assistant. Please try again.",
+          "bot"
+        );
       });
   }
 
