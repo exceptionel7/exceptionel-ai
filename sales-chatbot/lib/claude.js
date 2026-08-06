@@ -91,7 +91,7 @@ function callMessages(apiKey, body) {
           "anthropic-version": API_VERSION,
           "Content-Length": Buffer.byteLength(payload),
         },
-        timeout: 30000,
+        timeout: 20000,
       },
       (res) => {
         let data = "";
@@ -143,13 +143,22 @@ function runTool(name, input, ctx) {
 }
 
 // ---------------- Boucle de conversation ----------------
-async function converse({ apiKey, model, brand, messages, catalog, session }) {
+async function converse({ apiKey, model, brand, messages, catalog, session, deadlineMs }) {
   const ctx = { catalog, session, collectedProducts: [], collectedActions: [] };
   const convo = messages.slice(); // [{role, content}]
   const system = buildSystemPrompt(brand);
   let guard = 0;
 
+  // Budget de temps global : on doit rendre la main AVANT que Vercel ne tue la
+  // fonction (sinon 504 HTML → le widget casse). Par défaut ~45 s.
+  const deadline = Date.now() + (deadlineMs || 45000);
+
   while (guard++ < 5) {
+    if (Date.now() > deadline) {
+      // Plus le temps de faire un aller-retour Claude : on abandonne
+      // proprement pour laisser le repli hors-ligne prendre le relais.
+      throw new Error("time budget exceeded");
+    }
     const resp = await callMessages(apiKey, {
       model: model || "claude-sonnet-5",
       max_tokens: 1024,
