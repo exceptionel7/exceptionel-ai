@@ -90,3 +90,7 @@ module.exports = async (req, res) => {
     return json(res, 500, { error: e.message });
   }
 };
+
+// Config au niveau de la fonction : laisse jusqu'à 60 s à la boucle de vente
+// (plusieurs appels Claude à la suite) avant que Vercel ne coupe.
+module.exports.config = { maxDuration: 60 };
