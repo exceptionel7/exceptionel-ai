@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Exceptionel AI — Sell More With AI</title>
+    <meta name="description" content="AI-powered chatbot, marketing videos and content — sell directly on your website, not just through ads." />
+    <style>
+      :root { --bg:#0a0c10; --surface:#12151c; --border:#1e2330; --text:#e8eaf0; --muted:#8a93a8; --accent:#7c5cff; --accent2:#22d3ee; --success:#34d399; }
+      *{box-sizing:border-box;margin:0}
+      body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+      a{color:var(--accent2);text-decoration:none}
+      .container{max-width:1100px;margin:0 auto;padding:0 24px}
+
+      /* NAV */
+      nav{position:sticky;top:0;z-index:50;background:rgba(10,12,16,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 0}
+      nav .inner{display:flex;align-items:center;justify-content:space-between}
+      .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px}
+      .logo .mark{color:var(--accent);font-size:22px}
+      .logo .ai{color:var(--accent2)}
+      nav .links{display:flex;gap:18px;align-items:center;font-size:14px}
+      nav .links a{color:var(--muted)}
+      nav .links a:hover{color:#fff}
+      .btn{display:inline-block;padding:11px 22px;border-radius:10px;font-weight:700;font-size:14px;border:none;cursor:pointer;transition:transform .12s}
+      .btn:hover{transform:translateY(-2px)}
+      .btn-primary{background:linear-gradient(135deg,var(--accent),#5b8cff);color:#fff;box-shadow:0 8px 24px rgba(124,92,255,.3)}
+      .btn-ghost{border:1px solid var(--border);background:transparent;color:var(--text)}
+      .btn-lg{padding:14px 30px;font-size:16px}
+
+      /* HERO */
+      .hero{text-align:center;padding:100px 24px 60px;background:radial-gradient(900px 500px at 50% -10%,rgba(124,92,255,.2),transparent),radial-gradient(700px 400px at 80% 20%,rgba(34,211,238,.1),transparent)}
+      .hero h1{font-size:clamp(34px,5.5vw,60px);line-height:1.15;margin-bottom:18px;background:linear-gradient(90deg,#fff 20%,#c9c1ff 60%,var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+      .hero .lead{color:var(--muted);font-size:clamp(16px,2vw,20px);max-width:640px;margin:0 auto 32px}
+      .hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+      .hero .badge{display:inline-block;margin-top:28px;padding:8px 14px;border:1px solid var(--border);border-radius:999px;font-size:12px;color:var(--muted)}
+
+      /* FEATURES */
+      .features{padding:80px 0}
+      .features h2{text-align:center;font-size:28px;margin-bottom:10px}
+      .features .sub{text-align:center;color:var(--muted);margin-bottom:40px;font-size:16px}
+      .fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+      .fcard{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;transition:transform .15s,border-color .15s}
+      .fcard:hover{transform:translateY(-4px);border-color:var(--accent)}
+      .fcard .icon{font-size:32px;margin-bottom:12px}
+      .fcard h3{margin-bottom:8px;font-size:18px}
+      .fcard p{color:var(--muted);font-size:14px}
+
+      /* HOW IT WORKS */
+      .how{padding:80px 0;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+      .how h2{text-align:center;font-size:28px;margin-bottom:40px}
+      .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px}
+      .step{text-align:center;padding:24px}
+      .step .num{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#5b8cff);color:#fff;font-weight:800;font-size:18px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px}
+      .step h3{margin-bottom:8px}
+      .step p{color:var(--muted);font-size:14px}
+
+      /* PRICING */
+      .pricing{padding:80px 0}
+      .pricing h2{text-align:center;font-size:28px;margin-bottom:10px}
+      .pricing .sub{text-align:center;color:var(--muted);margin-bottom:40px;font-size:16px}
+      .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;align-items:start}
+      .plan{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:30px;position:relative}
+      .plan.pop{border-color:var(--accent);box-shadow:0 0 40px rgba(124,92,255,.15)}
+      .plan.pop::before{content:"Most popular";position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:999px}
+      .plan .name{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+      .plan .price{font-size:36px;font-weight:800;margin:8px 0}
+      .plan .price span{font-size:16px;color:var(--muted);font-weight:400}
+      .plan ul{list-style:none;padding:0;margin:18px 0 24px}
+      .plan ul li{padding:6px 0;font-size:14px;color:var(--muted)}
+      .plan ul li::before{content:"✓ ";color:var(--success)}
+      .plan .btn{width:100%;text-align:center}
+
+      /* SOCIAL PROOF */
+      .proof{padding:60px 0;text-align:center}
+      .proof .logos{display:flex;gap:32px;justify-content:center;flex-wrap:wrap;opacity:.5;font-size:14px;color:var(--muted)}
+      .proof p{color:var(--muted);font-size:14px;margin-top:12px}
+
+      /* CTA */
+      .cta-section{padding:80px 0;text-align:center;background:radial-gradient(600px 300px at 50% 50%,rgba(124,92,255,.15),transparent)}
+      .cta-section h2{font-size:28px;margin-bottom:14px}
+      .cta-section p{color:var(--muted);margin-bottom:24px}
+
+      /* FOOTER */
+      footer{padding:30px 0;border-top:1px solid var(--border);text-align:center;color:var(--muted);font-size:13px}
+
+      @media(max-width:600px){.hero{padding:60px 16px 40px}.fgrid,.steps,.pgrid{grid-template-columns:1fr}}
+    </style>
+  </head>
+  <body>
+    <!-- NAV -->
+    <nav>
+      <div class="container inner">
+        <div class="logo"><span class="mark">✦</span> Exceptionel<span class="ai"> AI</span></div>
+        <div class="links">
+          <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
+          <a href="https://exceptionel-ai-6co8.vercel.app/" class="btn btn-ghost">Log in</a>
+          <a href="https://exceptionel-ai-6co8.vercel.app/" class="btn btn-primary">Start free</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="container">
+        <h1>Sell more on your website.<br/>Let AI do the talking.</h1>
+        <p class="lead">
+          Exceptionel AI turns visitors into buyers with an intelligent sales
+          chatbot, generates marketing videos in seconds, and handles payments —
+          all from one platform.
+        </p>
+        <div class="hero-btns">
+          <a href="https://exceptionel-ai-6co8.vercel.app/" class="btn btn-primary btn-lg">Get started free →</a>
+          <a href="https://exceptionel-ai.vercel.app/" class="btn btn-ghost btn-lg">Live demo</a>
+        </div>
+        <span class="badge">No credit card required · Free plan available</span>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="features" id="features">
+      <div class="container">
+        <h2>Everything you need to sell online with AI</h2>
+        <p class="sub">Three powerful modules working together to grow your revenue.</p>
+        <div class="fgrid">
+          <div class="fcard">
+            <div class="icon">💬</div>
+            <h3>AI Sales Chatbot</h3>
+            <p>An embeddable widget that knows your catalog, recommends products, handles objections, qualifies leads and closes the sale — directly on your site, 24/7.</p>
+          </div>
+          <div class="fcard">
+            <div class="icon">🎬</div>
+            <h3>Marketing Video Generator</h3>
+            <p>From product info to published video in one click. AI writes the script, generates the video (Runway), and publishes to Instagram, TikTok & Facebook.</p>
+          </div>
+          <div class="fcard">
+            <div class="icon">💳</div>
+            <h3>Payments & Orders</h3>
+            <p>Stripe-powered checkout built into the chatbot conversation. Customers pay without leaving the chat. You track orders in real-time.</p>
+          </div>
+          <div class="fcard">
+            <div class="icon">📊</div>
+            <h3>Dashboard</h3>
+            <p>One place to see your leads, videos, orders, and module status. Configure your brand tone and catalog. All data scoped to your account.</p>
+          </div>
+          <div class="fcard">
+            <div class="icon">🔐</div>
+            <h3>Merchant Accounts</h3>
+            <p>Secure sign-up with hashed passwords and JWT sessions. Your data is yours — isolated per account, stored in PostgreSQL.</p>
+          </div>
+          <div class="fcard">
+            <div class="icon">⚡</div>
+            <h3>Zero Dependencies</h3>
+            <p>Every module runs on vanilla Node.js — no npm install, deploys in seconds on Vercel. Lightweight, fast, and reliable.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="how">
+      <div class="container">
+        <h2>How it works</h2>
+        <div class="steps">
+          <div class="step">
+            <div class="num">1</div>
+            <h3>Create your account</h3>
+            <p>Sign up in 30 seconds. Configure your brand name, tone and target audience.</p>
+          </div>
+          <div class="step">
+            <div class="num">2</div>
+            <h3>Add your catalog</h3>
+            <p>Paste your products as JSON or connect your store. The AI learns your catalog instantly.</p>
+          </div>
+          <div class="step">
+            <div class="num">3</div>
+            <h3>Embed & sell</h3>
+            <p>Paste one line of code on your site. The chatbot starts selling, the video generator creates content, and you track everything in the dashboard.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRICING -->
+    <section class="pricing" id="pricing">
+      <div class="container">
+        <h2>Simple, transparent pricing</h2>
+        <p class="sub">Start free, upgrade as you grow. Cancel anytime.</p>
+        <div class="pgrid">
+          <div class="plan">
+            <div class="name">Free</div>
+            <div class="price">$0<span>/month</span></div>
+            <ul>
+              <li>50 chatbot messages / month</li>
+              <li>1 video / month (mock render)</li>
+              <li>Lead capture (up to 10)</li>
+              <li>Demo mode (no real AI)</li>
+              <li>Community support</li>
+            </ul>
+            <a href="https://exceptionel-ai-6co8.vercel.app/" class="btn btn-ghost">Start free</a>
+          </div>
+          <div class="plan pop">
+            <div class="name">Starter</div>
+            <div class="price">$29<span>/month</span></div>
+            <ul>
+              <li>1,000 chatbot messages / month</li>
+              <li>5 AI videos / month (Runway)</li>
+              <li>Unlimited lead capture</li>
+              <li>Claude AI (real conversations)</li>
+              <li>Stripe payments integration</li>
+              <li>Email support</li>
+            </ul>
+            <a href="https://exceptionel-ai-6co8.vercel.app/" class="btn btn-primary">Get started →</a>
+          </div>
+          <div class="plan">
+            <div class="name">Pro</div>
+            <div class="price">$99<span>/month</span></div>
+            <ul>
+              <li>10,000 chatbot messages / month</li>
+              <li>30 AI videos / month</li>
+              <li>Auto-publish to social media</li>
+              <li>Priority Claude AI</li>
+              <li>Custom brand voice tuning</li>
+              <li>Priority support</li>
+            </ul>
+            <a href="https://exceptionel-ai-6co8.vercel.app/" class="btn btn-ghost">Contact us</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SOCIAL PROOF -->
+    <section class="proof">
+      <div class="container">
+        <div class="logos">
+          <span>Powered by Claude (Anthropic)</span>
+          <span>·</span>
+          <span>Video by Runway</span>
+          <span>·</span>
+          <span>Payments by Stripe</span>
+        </div>
+        <p>Trusted AI infrastructure. Your data stays secure.</p>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+      <div class="container">
+        <h2>Ready to let AI sell for you?</h2>
+        <p>Join Exceptionel AI today — set up in minutes, start converting visitors into customers.</p>
+        <a href="https://exceptionel-ai-6co8.vercel.app/" class="btn btn-primary btn-lg">Create your free account →</a>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      <div class="container">
+        <p>© 2026 Exceptionel AI · <a href="https://exceptionel-ai.vercel.app/">Demo</a> · <a href="https://github.com/exceptionel7/exceptionel-ai">GitHub</a></p>
+      </div>
+    </footer>
+  </body>
+</html>
