@@ -12,8 +12,14 @@ const identity = require("../lib/identity");
 
 function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  // Doit inclure X-Public-Key (envoyé par le widget) sinon le préflight CORS
+  // échoue → "Failed to fetch" côté navigateur. "*" couvre tout le reste.
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Public-Key, *"
+  );
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Max-Age", "86400");
 }
 
 function json(res, code, obj) {
