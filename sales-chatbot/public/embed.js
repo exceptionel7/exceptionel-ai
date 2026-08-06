@@ -18,8 +18,20 @@
   var script =
     document.currentScript ||
     document.querySelector('script[src*="embed.js"]');
+
+  // Base API par défaut : l'origine d'où provient CE script (ex :
+  // https://exceptionel-ai.vercel.app). Bien plus fiable que l'origine de la
+  // page hôte (exceptionel.com n'a pas de route /api/chat).
+  function scriptOrigin() {
+    try {
+      var src = script && script.src;
+      if (src) return new URL(src, window.location.href).origin;
+    } catch (e) {}
+    return window.location.origin;
+  }
+
   var cfg = {
-    api: (script && script.getAttribute("data-api")) || window.location.origin,
+    api: (script && script.getAttribute("data-api")) || scriptOrigin(),
     key: (script && script.getAttribute("data-key")) || "demo",
     merchant: (script && (script.getAttribute("data-merchant") || script.getAttribute("data-key"))) || "demo",
     title: (script && script.getAttribute("data-title")) || "Sales Assistant",
@@ -159,22 +171,41 @@
     addMsg(message, "me");
     var typing = addMsg("…", "bot");
     typing.classList.add("typing");
-    fetch(cfg.api.replace(/\/$/, "") + "/api/chat", {
+    var endpoint = cfg.api.replace(/\/$/, "") + "/api/chat";
+    fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Public-Key": cfg.key },
       body: JSON.stringify({ sessionId: sessionId, message: message, merchantId: cfg.merchant }),
     })
       .then(function (r) {
-        return r.json();
+        return r.text().then(function (t) {
+          return { status: r.status, body: t };
+        });
       })
-      .then(function (data) {
+      .then(function (res) {
         typing.remove();
-        addMsg(data.reply || "…", "bot");
-        addProducts(data.products, data.actions);
+        var data = null;
+        try {
+          data = JSON.parse(res.body);
+        } catch (e) {}
+        if (data && (data.reply || (data.products && data.products.length))) {
+          addMsg(data.reply || "…", "bot");
+          addProducts(data.products, data.actions);
+        } else if (data && data.error) {
+          addMsg("[server error " + res.status + "] " + data.error, "bot");
+        } else {
+          // Réponse non-JSON (souvent une page 404/504) : on affiche un extrait
+          // pour diagnostiquer où va vraiment la requête.
+          addMsg(
+            "[" + res.status + " @ " + endpoint + "] " +
+              String(res.body || "").replace(/\s+/g, " ").slice(0, 200),
+            "bot"
+          );
+        }
       })
-      .catch(function () {
+      .catch(function (err) {
         typing.remove();
-        addMsg("Sorry, something went wrong. Please try again.", "bot");
+        addMsg("[network error → " + endpoint + "] " + (err && err.message ? err.message : err), "bot");
       });
   }
 
