@@ -9,13 +9,23 @@
 
 const auth = require("./crypto-auth");
 const db = require("./db");
+const billing = require("./billing");
 
 function jwtSecret() {
   return process.env.AUTH_JWT_SECRET || "dev-insecure-secret-change-me";
 }
 
 function publicUser(u) {
-  return { id: u.id, email: u.email, brand_name: u.brand_name || "", created_at: u.created_at };
+  return {
+    id: u.id,
+    email: u.email,
+    brand_name: u.brand_name || "",
+    plan: u.plan || "free",
+    subscription_status: u.subscription_status || "none",
+    current_period_end: u.current_period_end || null,
+    has_subscription: !!u.stripe_customer_id,
+    created_at: u.created_at,
+  };
 }
 
 function validEmail(e) {
@@ -70,6 +80,7 @@ function health() {
     auth: "ready",
     storage: db.isConfigured() ? "postgres" : "in-memory (demo)",
     jwt_secret_set: !!process.env.AUTH_JWT_SECRET,
+    billing: billing.status(),
   };
 }
 
@@ -79,4 +90,32 @@ function verifyToken(authHeader) {
   return auth.verifyJWT(token, jwtSecret());
 }
 
-module.exports = { signup, login, me, health, verifyToken };
+// ---------------- Billing (subscriptions) ----------------
+async function loadUserFromAuth(authHeader) {
+  const payload = verifyToken(authHeader);
+  if (!payload) return { error: { status: 401, body: { error: "invalid or expired token" } } };
+  const user = await db.selectOne("users", { id: payload.sub });
+  if (!user) return { error: { status: 401, body: { error: "user not found" } } };
+  return { user: user };
+}
+
+async function billingCheckout(authHeader, body) {
+  const r = await loadUserFromAuth(authHeader);
+  if (r.error) return r.error;
+  return billing.checkout(r.user, body && body.plan, body && body.origin);
+}
+
+async function billingPortal(authHeader, body) {
+  const r = await loadUserFromAuth(authHeader);
+  if (r.error) return r.error;
+  return billing.portal(r.user, body && body.origin);
+}
+
+function billingWebhook(rawBody, sigHeader) {
+  return billing.handleWebhook(rawBody, sigHeader);
+}
+
+module.exports = {
+  signup, login, me, health, verifyToken,
+  billingCheckout, billingPortal, billingWebhook,
+};

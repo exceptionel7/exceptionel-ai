@@ -59,6 +59,7 @@
     if (name === "leads") loadLeads();
     if (name === "videos") loadVideos();
     if (name === "install") fillInstall();
+    if (name === "billing") fillBilling();
   }
   $$("#nav button").forEach(function (b) { b.addEventListener("click", function () { showView(b.dataset.view); }); });
 
@@ -193,6 +194,80 @@
     }
   });
 
+  // ---------- Plan & Billing ----------
+  function currentUser() { return Store.get("exc_dash_user", null); }
+  function cap(s) { s = String(s || ""); return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+  function fillBilling() {
+    var u = currentUser();
+    var note = $("#plan-note");
+    if (!token() || !u) {
+      $("#cur-plan").textContent = "–"; $("#cur-status").textContent = "–"; $("#cur-renew").textContent = "–";
+      if (note) { note.className = "hint"; note.textContent = "Sign in under Settings to see and manage your plan."; }
+      return;
+    }
+    $("#cur-plan").textContent = cap(u.plan || "free");
+    $("#cur-status").textContent = u.subscription_status || "none";
+    $("#cur-renew").textContent = u.current_period_end ? String(u.current_period_end).slice(0, 10) : "—";
+    if (note) { note.className = "hint"; note.textContent = "Signed in as " + (Store.raw("exc_dash_email") || "") + "."; }
+  }
+
+  // Refreshes the account (plan/status) from the auth module and updates the UI.
+  function refreshUser(cb) {
+    var authApi = trimUrl(settings.authApi);
+    if (!token() || !authApi) { if (cb) cb(); return; }
+    fetch(authApi + "/api/me", { headers: authHeaders() })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (d && d.user) { Store.set("exc_dash_user", d.user); Store.setRaw("exc_dash_uid", d.user.id || ""); fillBilling(); fillInstall(); }
+        if (cb) cb();
+      })
+      .catch(function () { if (cb) cb(); });
+  }
+
+  function billingAction(path, payload) {
+    var authApi = trimUrl(settings.authApi);
+    var m = $("#billing-msg");
+    if (!token() || !authApi) { m.className = "msg err"; m.textContent = "Sign in first (Settings tab)."; return; }
+    m.className = "msg"; m.textContent = "Redirecting to Stripe…";
+    payload = payload || {};
+    payload.origin = location.origin + location.pathname;
+    fetch(authApi + "/api/billing/" + path, {
+      method: "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, authHeaders()),
+      body: JSON.stringify(payload),
+    })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (res.ok && res.d.url) { location.href = res.d.url; return; }
+        m.className = "msg err"; m.textContent = (res.d && res.d.error) || "Could not start the billing session.";
+      })
+      .catch(function (e) { m.className = "msg err"; m.textContent = e.message; });
+  }
+  $("#sub-starter").addEventListener("click", function () { billingAction("checkout", { plan: "starter" }); });
+  $("#sub-pro").addEventListener("click", function () { billingAction("checkout", { plan: "pro" }); });
+  $("#manage-sub").addEventListener("click", function () { billingAction("portal", {}); });
+
+  // Handle the redirect back from Stripe (?billing=success|cancel|portal).
+  function handleBillingReturn() {
+    var params = new URLSearchParams(location.search);
+    var b = params.get("billing");
+    if (!b) return;
+    var banner = $("#billing-banner");
+    if (banner) {
+      banner.style.display = "block";
+      if (b === "success") { banner.style.color = "#34d399"; banner.textContent = "✅ Subscription activated — your plan is being updated (a few seconds)."; }
+      else if (b === "cancel") { banner.style.color = "#f0b"; banner.textContent = "Checkout canceled — no charge was made."; }
+      else { banner.style.color = "#b9a8ff"; banner.textContent = "Returned from the billing portal."; }
+    }
+    showView("billing");
+    // Plan is updated by the Stripe webhook; re-fetch a couple times to reflect it.
+    refreshUser();
+    setTimeout(refreshUser, 3000);
+    // Clean the URL so a refresh doesn't repeat the message.
+    if (history.replaceState) history.replaceState({}, document.title, location.origin + location.pathname);
+  }
+
   // ---------- Brand ----------
   function fillBrand() {
     $("#b-name").value = brand.brand_name || "";
@@ -254,13 +329,14 @@
         Store.setRaw("exc_dash_token", res.d.token);
         Store.setRaw("exc_dash_email", (res.d.user && res.d.user.email) || "");
         Store.setRaw("exc_dash_uid", (res.d.user && res.d.user.id) || "");
+        if (res.d.user) Store.set("exc_dash_user", res.d.user);
         m.className = "msg ok"; m.textContent = "Signed in ✓ — your account's data will now be shown.";
-        setAccountState(); fillInstall(); loadOverview();
+        setAccountState(); fillInstall(); fillBilling(); loadOverview();
       }).catch(function (e) { m.className = "msg err"; m.textContent = e.message; });
   });
   $("#logout-btn").addEventListener("click", function () {
-    Store.del("exc_dash_token"); Store.del("exc_dash_email"); Store.del("exc_dash_uid");
-    setAccountState(); fillInstall();
+    Store.del("exc_dash_token"); Store.del("exc_dash_email"); Store.del("exc_dash_uid"); Store.del("exc_dash_user");
+    setAccountState(); fillInstall(); fillBilling();
     var m = $("#login-msg"); m.className = "msg"; m.textContent = "Logged out.";
     loadOverview();
   });
@@ -289,21 +365,9 @@
     });
   });
 
-  // If logged in from a previous session but the account id wasn't stored yet
-  // (older login), fetch it from the auth module's /api/me endpoint.
-  function backfillUid() {
-    if (!token() || uid()) return;
-    var authApi = trimUrl(settings.authApi);
-    if (!authApi) return;
-    fetch(authApi + "/api/me", { headers: authHeaders() })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (d && d.user && d.user.id) { Store.setRaw("exc_dash_uid", d.user.id); fillInstall(); }
-      })
-      .catch(function () {});
-  }
-
   // ---------- Init ----------
-  fillSettings(); fillBrand(); fillCatalog(); setAccountState(); fillInstall(); backfillUid();
+  fillSettings(); fillBrand(); fillCatalog(); setAccountState(); fillInstall(); fillBilling();
   loadOverview();
+  refreshUser();        // back-fills account id + plan for existing sessions
+  handleBillingReturn(); // shows a message when returning from Stripe
 })();

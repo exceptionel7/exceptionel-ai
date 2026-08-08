@@ -106,4 +106,20 @@ async function select(table, filters) {
   });
 }
 
-module.exports = { insert, selectOne, select, isConfigured };
+// Met à jour les lignes correspondant aux filtres (PATCH PostgREST).
+async function update(table, filters, patch) {
+  if (isConfigured()) {
+    const rows = await request("PATCH", "/rest/v1/" + table + encodeFilters(filters), patch);
+    return (rows && rows[0]) || null;
+  }
+  let updated = null;
+  memTable(table).forEach(function (r) {
+    if (Object.keys(filters || {}).every(function (k) { return r[k] === filters[k]; })) {
+      Object.assign(r, patch);
+      updated = r;
+    }
+  });
+  return updated;
+}
+
+module.exports = { insert, selectOne, select, update, isConfigured };

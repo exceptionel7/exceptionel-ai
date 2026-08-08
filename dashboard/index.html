@@ -21,6 +21,7 @@
           <button data-view="brand">🎨 Brand</button>
           <button data-view="catalog">🛍️ Catalog</button>
           <button data-view="install">🔌 Install widget</button>
+          <button data-view="billing">💠 Plan</button>
           <button data-view="settings">⚙️ Settings</button>
         </nav>
       </aside>
@@ -142,6 +143,37 @@
               <button class="btn btn-primary" id="copy-snippet">📋 Copy snippet</button>
             </div>
             <div class="msg" id="copy-msg"></div>
+          </div>
+        </section>
+
+        <!-- PLAN & BILLING -->
+        <section id="view-billing" class="view">
+          <div class="topline"><h1>Plan &amp; Billing</h1></div>
+          <p class="sub">Subscribe to Exceptionel AI or manage your subscription.</p>
+
+          <div class="banner" id="billing-banner" style="display:none"></div>
+
+          <div class="panel">
+            <h3>Current plan</h3>
+            <div class="kpis">
+              <div class="kpi"><strong id="cur-plan">–</strong><span>Plan</span></div>
+              <div class="kpi"><strong id="cur-status">–</strong><span>Status</span></div>
+              <div class="kpi"><strong id="cur-renew">–</strong><span>Renews on</span></div>
+            </div>
+            <p class="hint" id="plan-note">Sign in under Settings to see and manage your plan.</p>
+          </div>
+
+          <div class="panel">
+            <h3>Choose a plan</h3>
+            <p class="hint">You'll be redirected to Stripe's secure checkout. Free is the default — no payment needed.</p>
+            <div class="row">
+              <button class="btn btn-primary" id="sub-starter">Subscribe — Starter · $29/mo</button>
+              <button class="btn btn-primary" id="sub-pro">Subscribe — Pro · $99/mo</button>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <button class="btn" id="manage-sub">💳 Manage / cancel subscription</button>
+            </div>
+            <div class="msg" id="billing-msg"></div>
           </div>
         </section>
 
