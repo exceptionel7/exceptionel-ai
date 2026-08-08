@@ -71,6 +71,7 @@
 
   // ---------- Overview ----------
   function loadOverview() {
+    setAccountState(); // garde le bandeau "signed in / not signed in" à jour
     var cb = trimUrl(settings.chatbotApi);
     var vd = trimUrl(settings.videoApi);
     var pay = trimUrl(settings.paymentsApi);
