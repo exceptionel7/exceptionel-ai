@@ -20,6 +20,7 @@
           <button data-view="videos">🎬 Videos</button>
           <button data-view="brand">🎨 Brand</button>
           <button data-view="catalog">🛍️ Catalog</button>
+          <button data-view="install">🔌 Install widget</button>
           <button data-view="settings">⚙️ Settings</button>
         </nav>
       </aside>
@@ -118,6 +119,29 @@
               <button class="btn" id="load-sample">Sample</button>
             </div>
             <div class="msg" id="cat-msg"></div>
+          </div>
+        </section>
+
+        <!-- INSTALL WIDGET -->
+        <section id="view-install" class="view">
+          <div class="topline"><h1>Install the chatbot widget</h1></div>
+          <p class="sub">Paste one line on your website to add the AI sales chatbot. Leads it captures will show up here in your dashboard.</p>
+
+          <div class="panel">
+            <h3>Your merchant ID</h3>
+            <p class="hint">This identifies your account. The widget must use exactly this ID so your leads are attached to you.</p>
+            <input id="merchant-id" readonly placeholder="Sign in under Settings to reveal your merchant ID" />
+            <div class="msg" id="install-warn"></div>
+          </div>
+
+          <div class="panel">
+            <h3>Embed snippet</h3>
+            <p class="hint">Copy this and paste it just before the <code>&lt;/body&gt;</code> tag of your website (e.g. exceptionel.com).</p>
+            <textarea id="embed-snippet" rows="7" spellcheck="false" readonly></textarea>
+            <div class="row">
+              <button class="btn btn-primary" id="copy-snippet">📋 Copy snippet</button>
+            </div>
+            <div class="msg" id="copy-msg"></div>
           </div>
         </section>
 

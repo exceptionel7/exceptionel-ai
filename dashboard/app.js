@@ -37,6 +37,7 @@
     catch (e) { return "$" + (cents / 100).toFixed(2); }
   }
   function token() { return Store.raw("exc_dash_token") || ""; }
+  function uid() { return Store.raw("exc_dash_uid") || ""; }
   function authHeaders() { return token() ? { Authorization: "Bearer " + token() } : {}; }
 
   function fetchJSON(url, opts) {
@@ -57,6 +58,7 @@
     if (name === "overview") loadOverview();
     if (name === "leads") loadLeads();
     if (name === "videos") loadVideos();
+    if (name === "install") fillInstall();
   }
   $$("#nav button").forEach(function (b) { b.addEventListener("click", function () { showView(b.dataset.view); }); });
 
@@ -148,6 +150,48 @@
   }
   $("#reload-videos").addEventListener("click", loadVideos);
 
+  // ---------- Install widget (embed snippet generator) ----------
+  function buildSnippet() {
+    var cb = trimUrl(settings.chatbotApi) || "https://exceptionel-ai.vercel.app";
+    var id = uid() || "YOUR_MERCHANT_ID";
+    return (
+      '<script src="' + cb + '/public/embed.js"\n' +
+      '        data-merchant="' + id + '"\n' +
+      '        data-api="' + cb + '"\n' +
+      '        data-title="Exceptionel Advisor"\n' +
+      '        data-accent="#7c5cff"><' + "/script>"
+    );
+  }
+  function fillInstall() {
+    var idEl = $("#merchant-id");
+    var warn = $("#install-warn");
+    var snip = $("#embed-snippet");
+    if (idEl) idEl.value = uid() || "";
+    if (warn) {
+      if (uid()) {
+        warn.className = "msg ok";
+        warn.textContent = "Signed in — this ID is linked to your account. Leads from a widget using it appear in your dashboard.";
+      } else {
+        warn.className = "msg err";
+        warn.textContent = "You are not signed in. Sign in under Settings to get your real merchant ID, otherwise leads won't be attached to your account.";
+      }
+    }
+    if (snip) snip.value = buildSnippet();
+  }
+  $("#copy-snippet").addEventListener("click", function () {
+    var snip = $("#embed-snippet");
+    var m = $("#copy-msg");
+    snip.select();
+    var done = function () { m.className = "msg ok"; m.textContent = "Snippet copied to clipboard ✓"; };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(snip.value).then(done, function () {
+        try { document.execCommand("copy"); done(); } catch (e) { m.className = "msg err"; m.textContent = "Copy failed — select the text manually."; }
+      });
+    } else {
+      try { document.execCommand("copy"); done(); } catch (e) { m.className = "msg err"; m.textContent = "Copy failed — select the text manually."; }
+    }
+  });
+
   // ---------- Brand ----------
   function fillBrand() {
     $("#b-name").value = brand.brand_name || "";
@@ -208,13 +252,14 @@
         if (!res.ok) { m.className = "msg err"; m.textContent = res.d.error || "Login failed"; return; }
         Store.setRaw("exc_dash_token", res.d.token);
         Store.setRaw("exc_dash_email", (res.d.user && res.d.user.email) || "");
+        Store.setRaw("exc_dash_uid", (res.d.user && res.d.user.id) || "");
         m.className = "msg ok"; m.textContent = "Signed in ✓ — your account's data will now be shown.";
-        setAccountState(); loadOverview();
+        setAccountState(); fillInstall(); loadOverview();
       }).catch(function (e) { m.className = "msg err"; m.textContent = e.message; });
   });
   $("#logout-btn").addEventListener("click", function () {
-    Store.del("exc_dash_token"); Store.del("exc_dash_email");
-    setAccountState();
+    Store.del("exc_dash_token"); Store.del("exc_dash_email"); Store.del("exc_dash_uid");
+    setAccountState(); fillInstall();
     var m = $("#login-msg"); m.className = "msg"; m.textContent = "Logged out.";
     loadOverview();
   });
@@ -243,7 +288,21 @@
     });
   });
 
+  // If logged in from a previous session but the account id wasn't stored yet
+  // (older login), fetch it from the auth module's /api/me endpoint.
+  function backfillUid() {
+    if (!token() || uid()) return;
+    var authApi = trimUrl(settings.authApi);
+    if (!authApi) return;
+    fetch(authApi + "/api/me", { headers: authHeaders() })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (d && d.user && d.user.id) { Store.setRaw("exc_dash_uid", d.user.id); fillInstall(); }
+      })
+      .catch(function () {});
+  }
+
   // ---------- Init ----------
-  fillSettings(); fillBrand(); fillCatalog(); setAccountState();
+  fillSettings(); fillBrand(); fillCatalog(); setAccountState(); fillInstall(); backfillUid();
   loadOverview();
 })();
