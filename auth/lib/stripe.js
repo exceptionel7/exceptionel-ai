@@ -98,10 +98,19 @@ function retrieveSubscription(secretKey, id) {
   return stripeRequest(secretKey, "GET", "/v1/subscriptions/" + encodeURIComponent(id), null);
 }
 
+// Retrieves an event from Stripe by id. Used to AUTHENTICATE webhooks without
+// depending on the raw request body (which @vercel/node parses): only Stripe
+// can return a real event for a real id, so a successful fetch proves the
+// event is genuine.
+function retrieveEvent(secretKey, id) {
+  return stripeRequest(secretKey, "GET", "/v1/events/" + encodeURIComponent(id), null);
+}
+
 module.exports = {
   createSubscriptionSession,
   createPortalSession,
   retrieveSubscription,
+  retrieveEvent,
   stripeRequest,
   encodeForm,
 };

@@ -92,17 +92,37 @@ async function portal(user, origin) {
 // ---------------- Webhook (keep plan in sync) ----------------
 async function handleWebhook(rawBody, sigHeader) {
   var c = cfg();
-  if (c.webhookSecret) {
-    if (!webhook.verifySignature(rawBody, sigHeader, c.webhookSecret, 300)) {
-      return { status: 400, body: { error: "invalid signature" } };
+
+  // Parse whatever we received (raw string OR a body already parsed by the
+  // @vercel/node runtime — either way we can read the event id).
+  var incoming = null;
+  try {
+    incoming = JSON.parse(Buffer.isBuffer(rawBody) ? rawBody.toString("utf8") : rawBody || "{}");
+  } catch (e) {
+    incoming = null;
+  }
+  if (!incoming) return { status: 400, body: { error: "invalid payload" } };
+
+  // Authenticate the event. Primary method: re-fetch it from Stripe by id
+  // (robust against body parsing). Fallback: HMAC signature on the raw body.
+  var event = null;
+  var verified = false;
+  if (c.secret && incoming.id && String(incoming.id).indexOf("evt_") === 0) {
+    try {
+      event = await stripe.retrieveEvent(c.secret, incoming.id);
+      verified = true;
+    } catch (e) {
+      /* fall through to signature check */
     }
   }
-  var event;
-  try {
-    event = JSON.parse(Buffer.isBuffer(rawBody) ? rawBody.toString("utf8") : rawBody || "{}");
-  } catch (e) {
-    return { status: 400, body: { error: "invalid payload" } };
+  if (!verified && c.webhookSecret && webhook.verifySignature(rawBody, sigHeader, c.webhookSecret, 300)) {
+    event = incoming;
+    verified = true;
   }
+  if (!verified || !event) {
+    return { status: 400, body: { error: "unverified webhook" } };
+  }
+
   var obj = (event.data && event.data.object) || {};
 
   try {
