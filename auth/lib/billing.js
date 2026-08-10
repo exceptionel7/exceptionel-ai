@@ -135,6 +135,16 @@ async function handleWebhook(rawBody, sigHeader) {
           subscription_status: "active",
         };
         if (obj.metadata && obj.metadata.plan) patch.plan = obj.metadata.plan;
+        // Enrich with the subscription details (renewal date + plan from price).
+        if (obj.subscription && c.secret) {
+          try {
+            var sub = await stripe.retrieveSubscription(c.secret, obj.subscription);
+            if (sub && sub.current_period_end) patch.current_period_end = new Date(sub.current_period_end * 1000).toISOString();
+            var priceId = sub && sub.items && sub.items.data && sub.items.data[0] && sub.items.data[0].price && sub.items.data[0].price.id;
+            var planFromPrice = planForPrice(priceId);
+            if (planFromPrice) patch.plan = planFromPrice;
+          } catch (e) { /* period end will fill in on the next subscription event */ }
+        }
         await db.update("users", { id: userId }, patch);
       }
     } else if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
