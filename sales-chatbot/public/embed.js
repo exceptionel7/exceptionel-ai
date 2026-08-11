@@ -38,6 +38,22 @@
     accent: (script && script.getAttribute("data-accent")) || "#7c5cff",
   };
 
+  // Langue du visiteur (pour l'accueil et les libellés du widget)
+  var isFr = String(navigator.language || navigator.userLanguage || "").toLowerCase().indexOf("fr") === 0;
+  var T = {
+    greeting: isFr
+      ? "Bonjour ! 👋 Je suis votre conseiller. Dites-moi ce que vous cherchez et je vous trouve le produit parfait."
+      : "Hi! 👋 I'm your advisor. Tell me what you're looking for and I'll find the perfect product for you.",
+    placeholder: isFr ? "Écrivez votre message…" : "Type your message…",
+    online: isFr ? "En ligne • réponse en quelques secondes" : "Online • replies in seconds",
+    errNet: isFr
+      ? "Désolé, la connexion à l'assistant a échoué. Veuillez réessayer."
+      : "Sorry, something went wrong reaching the assistant. Please try again.",
+    errGeneric: isFr
+      ? "Désolé, je n'ai pas pu traiter votre demande. Réessayez dans un instant."
+      : "Sorry, I couldn't process that right now. Please try again in a moment.",
+  };
+
   // Identifiant de session persistant par visiteur
   var sessionId = localStorage.getItem("exc_chat_session");
   if (!sessionId) {
@@ -109,9 +125,9 @@
   panel.innerHTML =
     '<div class="hd"><button class="x">×</button><strong>' +
     esc(cfg.title) +
-    "</strong><small>Online • replies in seconds</small></div>" +
+    "</strong><small>" + esc(T.online) + "</small></div>" +
     '<div class="msgs"></div>' +
-    '<form class="ft"><input type="text" placeholder="Type your message…" autocomplete="off"/><button type="submit">➤</button></form>' +
+    '<form class="ft"><input type="text" placeholder="' + esc(T.placeholder) + '" autocomplete="off"/><button type="submit">➤</button></form>' +
     '<div class="pw">Powered by Exceptionel AI</div>';
   root.appendChild(panel);
 
@@ -192,18 +208,12 @@
           addMsg(data.reply || "…", "bot");
           addProducts(data.products, data.actions);
         } else {
-          addMsg(
-            "Sorry, I couldn't process that right now. Please try again in a moment.",
-            "bot"
-          );
+          addMsg(T.errGeneric, "bot");
         }
       })
       .catch(function () {
         typing.remove();
-        addMsg(
-          "Sorry, something went wrong reaching the assistant. Please try again.",
-          "bot"
-        );
+        addMsg(T.errNet, "bot");
       });
   }
 
@@ -212,10 +222,7 @@
     panel.classList.remove("hidden");
     if (!greeted) {
       greeted = true;
-      addMsg(
-        "Hi! 👋 I'm your advisor. Tell me what you're looking for and I'll find the perfect product for you.",
-        "bot"
-      );
+      addMsg(T.greeting, "bot");
     }
     input.focus();
   }

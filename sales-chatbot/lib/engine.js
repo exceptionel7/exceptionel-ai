@@ -76,6 +76,32 @@ async function recordLead(userId, session) {
   }
 }
 
+// Déduit le "besoin" du prospect : premier message utilisateur RÉELLEMENT
+// porteur de sens (on ignore les messages qui ne contiennent qu'un email).
+const NEED_STOP = new Set([
+  "mon", "ma", "mes", "est", "sont", "email", "mail", "adresse", "address",
+  "voici", "here", "is", "are", "my", "the", "and", "or", "et", "cest",
+  "bonjour", "hello", "salut", "hi", "merci", "thanks",
+]);
+function deriveNeed(session) {
+  const msgs = (session.messages || []).filter(function (m) { return m.role === "user"; });
+  for (let i = 0; i < msgs.length; i++) {
+    const cleaned = String(msgs[i].content || "")
+      .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    const meaningful = cleaned
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter(function (w) { return w.length > 2 && !NEED_STOP.has(w); });
+    if (meaningful.length >= 2) return cleaned.slice(0, 160);
+  }
+  return msgs.length ? String(msgs[0].content || "").slice(0, 160) : null;
+}
+
 // ---------------- Chat ----------------
 async function handleChat(body) {
   body = body || {};
@@ -127,7 +153,7 @@ async function handleChat(body) {
   if (foundEmail) {
     session.lead = session.lead || {};
     if (!session.lead.email) session.lead.email = foundEmail;
-    if (!session.lead.need) session.lead.need = session.messages.length ? session.messages[0].content : null;
+    if (!session.lead.need) session.lead.need = deriveNeed(session);
     if (!session.lead.status) session.lead.status = "qualified";
     if (session.lead.score == null) session.lead.score = 50;
   }
