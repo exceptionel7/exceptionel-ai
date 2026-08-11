@@ -47,6 +47,7 @@ function buildConfig() {
     tiktokAccessToken: process.env.TIKTOK_ACCESS_TOKEN || "",
     tiktokRefreshToken: process.env.TIKTOK_REFRESH_TOKEN || "",
     tiktokPrivacy: process.env.TIKTOK_PRIVACY_LEVEL || "SELF_ONLY",
+    tiktokPostMode: process.env.TIKTOK_POST_MODE || "draft",
   };
 }
 

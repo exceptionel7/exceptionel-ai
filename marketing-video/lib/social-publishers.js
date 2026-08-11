@@ -140,29 +140,33 @@ async function resolveTikTokToken(config) {
 }
 
 // ---------------- TikTok (Content Posting API) ----------------
+// Deux modes :
+//  - "draft" (scope video.upload) : envoie la vidéo dans les brouillons TikTok
+//    du créateur, qui finalise la publication dans l'app. Aucun audit strict.
+//  - "direct" (scope video.publish) : publie directement (SELF_ONLY tant que
+//    l'app n'est pas auditée, sinon PUBLIC_TO_EVERYONE).
 async function publishTikTok(video, caption, config) {
-  // Doc: https://developers.tiktok.com/doc/content-posting-api-reference
   const token = await resolveTikTokToken(config);
+  const mode = String(config.tiktokPostMode || "draft").toLowerCase();
+  const direct = mode === "direct";
+  const path = direct
+    ? "/v2/post/publish/video/init/"
+    : "/v2/post/publish/inbox/video/init/";
+  const body = { source_info: { source: "PULL_FROM_URL", video_url: video.url } };
+  if (direct) {
+    body.post_info = { title: caption, privacy_level: config.tiktokPrivacy || "SELF_ONLY" };
+  }
   const res = await httpsJSON(
-    {
-      hostname: "open.tiktokapis.com",
-      path: "/v2/post/publish/video/init/",
-      method: "POST",
-      headers: { Authorization: "Bearer " + token },
-    },
-    {
-      // Les apps TikTok NON auditées ne peuvent poster qu'en privé (SELF_ONLY).
-      // Une fois l'app auditée, passe TIKTOK_PRIVACY_LEVEL=PUBLIC_TO_EVERYONE.
-      post_info: { title: caption, privacy_level: config.tiktokPrivacy || "SELF_ONLY" },
-      source_info: { source: "PULL_FROM_URL", video_url: video.url },
-    }
+    { hostname: "open.tiktokapis.com", path: path, method: "POST", headers: { Authorization: "Bearer " + token } },
+    body
   );
   const id = res.data && res.data.publish_id;
   return {
     platform: "tiktok",
-    status: "published",
+    status: direct ? "published" : "uploaded_to_drafts",
     external_post_id: id,
-    post_url: id ? "https://www.tiktok.com/@me/video/" + id : null,
+    post_url: direct && id ? "https://www.tiktok.com/@me/video/" + id : null,
+    note: direct ? undefined : "Sent to your TikTok drafts — open the TikTok app to finish posting.",
   };
 }
 
