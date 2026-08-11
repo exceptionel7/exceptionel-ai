@@ -48,6 +48,8 @@ function httpsJSON(options, body) {
 const GRAPH = "graph.facebook.com";
 const GRAPH_VER = "v21.0";
 
+function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
 // ---------------- Instagram Reels (Meta Graph API) ----------------
 async function publishInstagram(video, caption, config) {
   const igId = config.igUserId;
@@ -61,11 +63,39 @@ async function publishInstagram(video, caption, config) {
       `&access_token=${encodeURIComponent(token)}`,
     method: "POST",
   });
-  // 2) Publier le conteneur
+  const creationId = container.id;
+
+  // 2) Instagram encode la vidéo de façon asynchrone : on attend que le
+  //    conteneur soit FINISHED avant de publier (sinon media_publish échoue).
+  let ready = false;
+  for (let i = 0; i < 6 && !ready; i++) {
+    await delay(2500);
+    const st = await httpsJSON({
+      hostname: GRAPH,
+      path: `/${GRAPH_VER}/${creationId}?fields=status_code` +
+        `&access_token=${encodeURIComponent(token)}`,
+      method: "GET",
+    });
+    if (st.status_code === "FINISHED") ready = true;
+    else if (st.status_code === "ERROR" || st.status_code === "EXPIRED") {
+      throw new Error("Instagram container " + st.status_code);
+    }
+  }
+  if (!ready) {
+    // Encodage encore en cours : on rend la main proprement (peut être republié).
+    return {
+      platform: "instagram",
+      status: "processing",
+      external_post_id: creationId,
+      note: "Video still encoding on Instagram — publish can be retried with this creation id.",
+    };
+  }
+
+  // 3) Publier le conteneur
   const published = await httpsJSON({
     hostname: GRAPH,
     path: `/${GRAPH_VER}/${igId}/media_publish` +
-      `?creation_id=${encodeURIComponent(container.id)}` +
+      `?creation_id=${encodeURIComponent(creationId)}` +
       `&access_token=${encodeURIComponent(token)}`,
     method: "POST",
   });
@@ -108,7 +138,9 @@ async function publishTikTok(video, caption, config) {
       headers: { Authorization: "Bearer " + config.tiktokAccessToken },
     },
     {
-      post_info: { title: caption, privacy_level: "SELF_ONLY" },
+      // Les apps TikTok NON auditées ne peuvent poster qu'en privé (SELF_ONLY).
+      // Une fois l'app auditée, passe TIKTOK_PRIVACY_LEVEL=PUBLIC_TO_EVERYONE.
+      post_info: { title: caption, privacy_level: config.tiktokPrivacy || "SELF_ONLY" },
       source_info: { source: "PULL_FROM_URL", video_url: video.url },
     }
   );
