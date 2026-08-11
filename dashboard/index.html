@@ -182,19 +182,24 @@
           <div class="topline"><h1>Settings</h1></div>
 
           <div class="panel">
-            <h3>Sign in (merchant account)</h3>
-            <p class="hint">Log in with your Exceptionel AI account so the dashboard shows YOUR leads, videos and orders.</p>
-            <label>Auth module URL</label>
-            <input id="s-auth" placeholder="https://exceptionel-auth.vercel.app" />
+            <h3>Sign in or create your account</h3>
+            <p class="hint">Log in with your Exceptionel AI account, or create a free account to get started.</p>
+            <label>Brand name <span style="opacity:.6">(only needed to sign up)</span></label>
+            <input id="s-brand" placeholder="Your store name" autocomplete="organization" />
             <label>Email</label>
-            <input id="s-email" type="email" placeholder="you@company.com" />
+            <input id="s-email" type="email" placeholder="you@company.com" autocomplete="email" />
             <label>Password</label>
-            <input id="s-password" type="password" placeholder="Your password" />
+            <input id="s-password" type="password" placeholder="At least 8 characters" />
             <div class="row">
               <button class="btn btn-primary" id="login-btn">🔐 Log in</button>
+              <button class="btn btn-primary" id="signup-btn">✨ Create account</button>
               <button class="btn" id="logout-btn">Log out</button>
             </div>
             <div class="msg" id="login-msg"></div>
+            <details style="margin-top:12px">
+              <summary class="hint" style="cursor:pointer">Advanced: Auth module URL</summary>
+              <input id="s-auth" placeholder="https://exceptionel-ai-6co8.vercel.app" style="margin-top:8px" />
+            </details>
           </div>
 
           <div class="panel">

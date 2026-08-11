@@ -21,7 +21,17 @@
     setRaw: function (k, v) { localStorage.setItem(k, v); },
     del: function (k) { localStorage.removeItem(k); },
   };
-  var settings = Store.get("exc_dash_settings", { chatbotApi: "", videoApi: "", paymentsApi: "", authApi: "" });
+  // Production module URLs — pre-filled so the dashboard works out of the box.
+  var DEFAULT_SETTINGS = {
+    authApi: "https://exceptionel-ai-6co8.vercel.app",
+    chatbotApi: "https://exceptionel-ai.vercel.app",
+    videoApi: "https://exceptionel-ai-7uf4.vercel.app",
+    paymentsApi: "https://exceptionel-ai-1zzj.vercel.app",
+  };
+  var settings = Object.assign({}, DEFAULT_SETTINGS, Store.get("exc_dash_settings", {}));
+  // Fall back to defaults for any blank value from an older saved config.
+  Object.keys(DEFAULT_SETTINGS).forEach(function (k) { if (!settings[k]) settings[k] = DEFAULT_SETTINGS[k]; });
+  Store.set("exc_dash_settings", settings);
   var brand = Store.get("exc_dash_brand", {});
   var catalog = Store.get("exc_dash_catalog", []);
 
@@ -316,24 +326,30 @@
     var el = $("#acct-state");
     if (el) el.textContent = token() && email ? ("Signed in as " + email) : "Not signed in";
   }
-  $("#login-btn").addEventListener("click", function () {
-    var authApi = trimUrl($("#s-auth").value);
+  function doAuth(kind) {
+    var authApi = trimUrl($("#s-auth") && $("#s-auth").value) || trimUrl(settings.authApi);
     var m = $("#login-msg");
-    if (!authApi) { m.className = "msg err"; m.textContent = "Enter the Auth module URL first."; return; }
+    if (!authApi) { m.className = "msg err"; m.textContent = "Auth module URL is missing (see Advanced)."; return; }
     settings.authApi = authApi; Store.set("exc_dash_settings", settings);
-    m.className = "msg"; m.textContent = "Signing in…";
-    fetch(authApi + "/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: $("#s-email").value.trim(), password: $("#s-password").value }) })
+    var payload = { email: $("#s-email").value.trim(), password: $("#s-password").value };
+    if (kind === "signup") payload.brand_name = ($("#s-brand") && $("#s-brand").value.trim()) || "";
+    m.className = "msg"; m.textContent = kind === "signup" ? "Creating your account…" : "Signing in…";
+    fetch(authApi + "/api/" + kind, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
-        if (!res.ok) { m.className = "msg err"; m.textContent = res.d.error || "Login failed"; return; }
+        if (!res.ok) { m.className = "msg err"; m.textContent = res.d.error || (kind === "signup" ? "Sign up failed" : "Login failed"); return; }
         Store.setRaw("exc_dash_token", res.d.token);
         Store.setRaw("exc_dash_email", (res.d.user && res.d.user.email) || "");
         Store.setRaw("exc_dash_uid", (res.d.user && res.d.user.id) || "");
         if (res.d.user) Store.set("exc_dash_user", res.d.user);
-        m.className = "msg ok"; m.textContent = "Signed in ✓ — your account's data will now be shown.";
+        m.className = "msg ok"; m.textContent = kind === "signup"
+          ? "Account created ✓ — you're signed in. Head to the Install widget & Plan tabs."
+          : "Signed in ✓ — your account's data will now be shown.";
         setAccountState(); fillInstall(); fillBilling(); loadOverview();
       }).catch(function (e) { m.className = "msg err"; m.textContent = e.message; });
-  });
+  }
+  $("#login-btn").addEventListener("click", function () { doAuth("login"); });
+  $("#signup-btn").addEventListener("click", function () { doAuth("signup"); });
   $("#logout-btn").addEventListener("click", function () {
     Store.del("exc_dash_token"); Store.del("exc_dash_email"); Store.del("exc_dash_uid"); Store.del("exc_dash_user");
     setAccountState(); fillInstall(); fillBilling();
