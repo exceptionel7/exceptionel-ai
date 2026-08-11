@@ -45,6 +45,7 @@ function buildConfig() {
     igUserId: process.env.META_IG_USER_ID || "",
     fbPageId: process.env.META_FB_PAGE_ID || "",
     tiktokAccessToken: process.env.TIKTOK_ACCESS_TOKEN || "",
+    tiktokRefreshToken: process.env.TIKTOK_REFRESH_TOKEN || "",
     tiktokPrivacy: process.env.TIKTOK_PRIVACY_LEVEL || "SELF_ONLY",
   };
 }

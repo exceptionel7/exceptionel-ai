@@ -13,6 +13,7 @@
  */
 
 const https = require("https");
+const tiktokOauth = require("./tiktok-oauth");
 
 function httpsJSON(options, body) {
   return new Promise((resolve, reject) => {
@@ -127,15 +128,27 @@ async function publishFacebook(video, caption, config) {
   };
 }
 
+// Résout un access token TikTok valide : de préférence en le régénérant depuis
+// le refresh token (les access tokens expirent en ~24h), sinon en utilisant le
+// token statique fourni.
+async function resolveTikTokToken(config) {
+  if (config.tiktokRefreshToken && tiktokOauth.isConfigured()) {
+    const t = await tiktokOauth.refresh(config.tiktokRefreshToken);
+    if (t && t.access_token) return t.access_token;
+  }
+  return config.tiktokAccessToken;
+}
+
 // ---------------- TikTok (Content Posting API) ----------------
 async function publishTikTok(video, caption, config) {
   // Doc: https://developers.tiktok.com/doc/content-posting-api-reference
+  const token = await resolveTikTokToken(config);
   const res = await httpsJSON(
     {
       hostname: "open.tiktokapis.com",
       path: "/v2/post/publish/video/init/",
       method: "POST",
-      headers: { Authorization: "Bearer " + config.tiktokAccessToken },
+      headers: { Authorization: "Bearer " + token },
     },
     {
       // Les apps TikTok NON auditées ne peuvent poster qu'en privé (SELF_ONLY).
@@ -175,7 +188,7 @@ function mockPublish(platform, video) {
 function hasCreds(platform, config) {
   if (platform === "instagram") return !!(config.metaAccessToken && config.igUserId);
   if (platform === "facebook") return !!(config.metaAccessToken && config.fbPageId);
-  if (platform === "tiktok") return !!config.tiktokAccessToken;
+  if (platform === "tiktok") return !!(config.tiktokAccessToken || (config.tiktokRefreshToken && tiktokOauth.isConfigured()));
   return false;
 }
 

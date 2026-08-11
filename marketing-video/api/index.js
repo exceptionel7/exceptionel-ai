@@ -7,11 +7,33 @@
 
 const engine = require("../lib/engine");
 const identity = require("../lib/identity");
+const tiktok = require("../lib/tiktok-oauth");
 
 function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+}
+
+function baseUrl(req) {
+  const host = req.headers["x-forwarded-host"] || req.headers.host;
+  return "https://" + host;
+}
+function htmlPage(res, code, inner) {
+  res.statusCode = code;
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.end(
+    "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'>" +
+    "<title>Connect TikTok — Exceptionel AI</title>" +
+    "<body style=\"font-family:system-ui,sans-serif;background:#0f1115;color:#e7e9ee;min-height:100vh;margin:0;display:flex;align-items:center;justify-content:center;padding:24px\">" +
+    "<div style=\"max-width:640px;width:100%;background:#171a21;border:1px solid #262b36;border-radius:16px;padding:28px\">" +
+    inner + "</div></body>"
+  );
+}
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>\"]/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+  });
 }
 
 function json(res, code, obj) {
@@ -39,6 +61,36 @@ module.exports = async (req, res) => {
   const route = (q || raw).toLowerCase();
 
   try {
+    // ---- TikTok OAuth: one-click connect flow ----
+    if (req.method === "GET" && route.includes("tiktok/connect")) {
+      if (!tiktok.isConfigured()) {
+        return htmlPage(res, 400, "<h2>TikTok not configured</h2><p>Set <code>TIKTOK_CLIENT_KEY</code> and <code>TIKTOK_CLIENT_SECRET</code> on this Vercel project, then redeploy.</p>");
+      }
+      const redirectUri = baseUrl(req) + "/api/tiktok/callback";
+      res.statusCode = 302;
+      res.setHeader("Location", tiktok.authorizeUrl("exc_" + Date.now(), redirectUri));
+      return res.end();
+    }
+    if (req.method === "GET" && route.includes("tiktok/callback")) {
+      const query = req.query || {};
+      if (query.error) {
+        return htmlPage(res, 400, "<h2>❌ Authorization refused</h2><p>" + esc(query.error_description || query.error) + "</p>");
+      }
+      if (!query.code) return htmlPage(res, 400, "<h2>Missing authorization code</h2>");
+      try {
+        const t = await tiktok.exchangeCode(query.code, baseUrl(req) + "/api/tiktok/callback");
+        return htmlPage(res, 200,
+          "<h2>✅ TikTok connected!</h2>" +
+          "<p>Copy this value into the Vercel env var <b>TIKTOK_REFRESH_TOKEN</b> (video project), then redeploy:</p>" +
+          "<textarea readonly style=\"width:100%;height:90px;background:#0f1115;color:#34d399;border:1px solid #262b36;border-radius:10px;padding:12px;font-family:monospace;font-size:13px\">" + esc(t.refresh_token || "") + "</textarea>" +
+          "<p style=\"color:#9aa2b1;font-size:13px\">Scopes: " + esc(t.scope || "") + " · This refresh token lasts ~365 days; the app mints fresh access tokens automatically.</p>" +
+          "<details style=\"margin-top:8px;color:#9aa2b1;font-size:12px\"><summary>Access token (expires in ~24h — usually not needed)</summary><textarea readonly style=\"width:100%;height:70px;background:#0f1115;color:#9aa2b1;border:1px solid #262b36;border-radius:10px;padding:10px;font-family:monospace;font-size:12px;margin-top:8px\">" + esc(t.access_token || "") + "</textarea></details>"
+        );
+      } catch (e) {
+        return htmlPage(res, 400, "<h2>❌ Token exchange failed</h2><p>" + esc(e.message) + "</p>");
+      }
+    }
+
     if (req.method === "POST" && route.includes("script")) return json(res, 200, await engine.generateScript(await readBody(req)));
     if (req.method === "POST" && route.includes("generate")) {
       const body = await readBody(req);
