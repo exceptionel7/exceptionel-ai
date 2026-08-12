@@ -71,6 +71,10 @@ module.exports = async (req, res) => {
       res.setHeader("Location", tiktok.authorizeUrl("exc_" + Date.now(), redirectUri));
       return res.end();
     }
+    if (route.includes("tiktok") && route.includes("status")) {
+      const pid = (req.query && (req.query.publish_id || req.query.publishId)) || "";
+      return json(res, 200, await engine.tiktokStatus(pid));
+    }
     if (req.method === "GET" && route.includes("tiktok/callback")) {
       const query = req.query || {};
       if (query.error) {

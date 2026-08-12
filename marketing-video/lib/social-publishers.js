@@ -259,6 +259,17 @@ function mockPublish(platform, video) {
   };
 }
 
+// Statut d'une publication TikTok (PROCESSING_UPLOAD, SEND_TO_USER_INBOX,
+// PUBLISH_COMPLETE, FAILED...). Utile pour diagnostiquer où en est la vidéo.
+async function tiktokPublishStatus(publishId, config) {
+  const token = await resolveTikTokToken(config);
+  const res = await httpsJSON(
+    { hostname: "open.tiktokapis.com", path: "/v2/post/publish/status/fetch/", method: "POST", headers: { Authorization: "Bearer " + token } },
+    { publish_id: publishId }
+  );
+  return res.data || res;
+}
+
 // Un compte est-il réellement configuré pour cette plateforme ?
 function hasCreds(platform, config) {
   if (platform === "instagram") return !!(config.metaAccessToken && config.igUserId);
@@ -282,4 +293,4 @@ async function publish({ platform, video, caption, config }) {
   return mockPublish(platform, video);
 }
 
-module.exports = { publish, hasCreds };
+module.exports = { publish, hasCreds, tiktokPublishStatus };

@@ -166,4 +166,13 @@ async function publishExisting({ videoUrl, caption, platform }) {
   });
 }
 
-module.exports = { generateScript, generateVideo, listVideos, heygenAssets, videoStatus, health, publishExisting, DEMO_PRODUCT };
+async function tiktokStatus(publishId) {
+  if (!publishId) return { error: "missing publish_id" };
+  try {
+    return await social.tiktokPublishStatus(publishId, buildConfig());
+  } catch (e) {
+    return { error: String((e && e.message) || e) };
+  }
+}
+
+module.exports = { generateScript, generateVideo, listVideos, heygenAssets, videoStatus, health, publishExisting, tiktokStatus, DEMO_PRODUCT };
