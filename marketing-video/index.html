@@ -176,7 +176,32 @@
         var link = p.post_url ? ' · <a href="' + esc(p.post_url) + '" target="_blank" rel="noopener">view</a>' : "";
         var extra = p.note ? '<div class="muted" style="font-size:11px;margin:2px 0 8px">' + esc(p.note) + "</div>"
           : (p.error ? '<div class="muted" style="font-size:11px;color:#ff8080;margin:2px 0 8px">' + esc(p.error) + "</div>" : "");
-        return '<div class="pub"><span>' + esc(p.platform) + link + '</span><span class="pill ' + cls + '">' + esc(label) + "</span></div>" + extra;
+        // Pour TikTok, on suivra le statut réel de traitement (accepté / refusé).
+        var ttStatus = (p.platform === "tiktok" && p.external_post_id && !p.mock)
+          ? '<div id="tt-status" class="muted" style="font-size:12px;margin:2px 0 8px">⏳ Checking TikTok processing status…</div>' : "";
+        return '<div class="pub"><span>' + esc(p.platform) + link + '</span><span class="pill ' + cls + '">' + esc(label) + "</span></div>" + extra + ttStatus;
+      }
+
+      // TikTok traite la vidéo en asynchrone : on vérifie le statut réel.
+      function checkTikTokStatus(publishId, tries) {
+        tries = tries || 0;
+        fetch("/api/tiktok/status?publish_id=" + encodeURIComponent(publishId))
+          .then(function (r) { return r.json(); })
+          .then(function (s) {
+            var el = document.getElementById("tt-status");
+            if (!el) return;
+            if (s.status === "SEND_TO_USER_INBOX" || s.status === "PUBLISH_COMPLETE") {
+              el.style.color = "#34d399";
+              el.innerHTML = "✅ TikTok accepted it — open the TikTok app (Inbox) to finish posting.";
+            } else if (s.status === "FAILED") {
+              el.style.color = "#ff8080";
+              el.innerHTML = "❌ TikTok rejected it: " + esc(s.fail_reason || "unknown");
+            } else {
+              el.innerHTML = "⏳ TikTok processing (" + esc(s.status || "…") + ")…";
+              if (tries < 12) setTimeout(function () { checkTikTokStatus(publishId, tries + 1); }, 4000);
+            }
+          })
+          .catch(function () {});
       }
 
       // Une fois la vidéo réellement prête (URL disponible), on publie
@@ -192,6 +217,9 @@
             .catch(function (e) { return { platform: p, status: "failed", error: String(e) }; });
         })).then(function (results) {
           box.innerHTML = '<span class="k">Publications</span>' + results.map(renderPub).join("");
+          results.forEach(function (r) {
+            if (r.platform === "tiktok" && r.external_post_id && !r.mock) checkTikTokStatus(r.external_post_id, 0);
+          });
         });
       }
 
