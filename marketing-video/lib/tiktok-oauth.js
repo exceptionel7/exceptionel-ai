@@ -20,7 +20,10 @@ function cfg() {
   return {
     clientKey: (process.env.TIKTOK_CLIENT_KEY || "").trim(),
     clientSecret: (process.env.TIKTOK_CLIENT_SECRET || "").trim(),
-    scopes: (process.env.TIKTOK_SCOPES || "video.publish").trim(),
+    // Doit correspondre aux scopes activés dans l'app TikTok. Par défaut le mode
+    // "brouillon" (video.upload). Passe TIKTOK_SCOPES="user.info.basic,video.publish"
+    // une fois l'app auditée pour la publication directe.
+    scopes: (process.env.TIKTOK_SCOPES || "user.info.basic,video.upload").trim(),
   };
 }
 
