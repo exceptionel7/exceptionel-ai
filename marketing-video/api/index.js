@@ -97,6 +97,16 @@ module.exports = async (req, res) => {
       body.__userId = identity.resolveUserId(req.headers, body);
       return json(res, 200, await engine.generateVideo(body));
     }
+    // Publish an already-rendered video (public MP4 URL) — used to test real
+    // publishing to TikTok drafts. GET with ?video_url=...&caption=...&platform=tiktok
+    if (route.includes("publish")) {
+      const src = req.method === "POST" ? await readBody(req) : (req.query || {});
+      return json(res, 200, await engine.publishExisting({
+        videoUrl: src.video_url || src.videoUrl,
+        caption: src.caption,
+        platform: src.platform || "tiktok",
+      }));
+    }
     if (req.method === "GET" && route.includes("videos")) {
       const userId = identity.resolveUserId(req.headers, req.query || {});
       return json(res, 200, await engine.listVideos(userId));

@@ -51,6 +51,62 @@ const GRAPH_VER = "v21.0";
 
 function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
+// Télécharge un fichier (suivi des redirections) dans un Buffer en mémoire.
+function downloadBuffer(url, redirects) {
+  redirects = redirects || 0;
+  return new Promise(function (resolve, reject) {
+    if (redirects > 5) return reject(new Error("too many redirects"));
+    const u = new URL(url);
+    https.get(
+      { hostname: u.hostname, path: u.pathname + u.search, headers: { "User-Agent": "ExceptionelAI/1.0" }, timeout: 45000 },
+      function (res) {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          res.resume();
+          const next = new URL(res.headers.location, url).toString();
+          return resolve(downloadBuffer(next, redirects + 1));
+        }
+        if (res.statusCode >= 400) { res.resume(); return reject(new Error("download HTTP " + res.statusCode)); }
+        const chunks = [];
+        res.on("data", function (c) { chunks.push(c); });
+        res.on("end", function () { resolve(Buffer.concat(chunks)); });
+      }
+    ).on("error", reject);
+  });
+}
+
+// Envoie les octets de la vidéo vers l'upload_url TikTok (push_by_file).
+function putVideoChunk(uploadUrl, buffer) {
+  return new Promise(function (resolve, reject) {
+    const u = new URL(uploadUrl);
+    const size = buffer.length;
+    const req = https.request(
+      {
+        hostname: u.hostname,
+        path: u.pathname + u.search,
+        method: "PUT",
+        headers: {
+          "Content-Type": "video/mp4",
+          "Content-Length": size,
+          "Content-Range": "bytes 0-" + (size - 1) + "/" + size,
+        },
+        timeout: 60000,
+      },
+      function (res) {
+        let d = "";
+        res.on("data", function (c) { d += c; });
+        res.on("end", function () {
+          if (res.statusCode >= 400) return reject(new Error("upload HTTP " + res.statusCode + " " + d.slice(0, 200)));
+          resolve({ status: res.statusCode });
+        });
+      }
+    );
+    req.on("timeout", function () { req.destroy(new Error("upload timeout")); });
+    req.on("error", reject);
+    req.write(buffer);
+    req.end();
+  });
+}
+
 // ---------------- Instagram Reels (Meta Graph API) ----------------
 async function publishInstagram(video, caption, config) {
   const igId = config.igUserId;
@@ -147,25 +203,40 @@ async function resolveTikTokToken(config) {
 //    l'app n'est pas auditée, sinon PUBLIC_TO_EVERYONE).
 async function publishTikTok(video, caption, config) {
   const token = await resolveTikTokToken(config);
-  const mode = String(config.tiktokPostMode || "draft").toLowerCase();
-  const direct = mode === "direct";
-  const path = direct
+  const direct = String(config.tiktokPostMode || "draft").toLowerCase() === "direct";
+  const initPath = direct
     ? "/v2/post/publish/video/init/"
     : "/v2/post/publish/inbox/video/init/";
-  const body = { source_info: { source: "PULL_FROM_URL", video_url: video.url } };
+
+  // On envoie le FICHIER (push_by_file) au lieu de PULL_FROM_URL : ça évite la
+  // "verified domain" exigée par TikTok pour tirer une vidéo depuis une URL
+  // (nos vidéos sont sur le CDN de Runway, domaine qu'on ne possède pas).
+  const buffer = await downloadBuffer(video.url);
+  const size = buffer.length;
+  if (!size) throw new Error("downloaded video is empty");
+
+  const body = {
+    source_info: { source: "FILE_UPLOAD", video_size: size, chunk_size: size, total_chunk_count: 1 },
+  };
   if (direct) {
     body.post_info = { title: caption, privacy_level: config.tiktokPrivacy || "SELF_ONLY" };
   }
-  const res = await httpsJSON(
-    { hostname: "open.tiktokapis.com", path: path, method: "POST", headers: { Authorization: "Bearer " + token } },
+
+  const init = await httpsJSON(
+    { hostname: "open.tiktokapis.com", path: initPath, method: "POST", headers: { Authorization: "Bearer " + token } },
     body
   );
-  const id = res.data && res.data.publish_id;
+  const publishId = init.data && init.data.publish_id;
+  const uploadUrl = init.data && init.data.upload_url;
+  if (!uploadUrl) throw new Error("TikTok returned no upload_url: " + JSON.stringify(init).slice(0, 200));
+
+  await putVideoChunk(uploadUrl, buffer);
+
   return {
     platform: "tiktok",
     status: direct ? "published" : "uploaded_to_drafts",
-    external_post_id: id,
-    post_url: direct && id ? "https://www.tiktok.com/@me/video/" + id : null,
+    external_post_id: publishId,
+    post_url: direct && publishId ? "https://www.tiktok.com/@me/video/" + publishId : null,
     note: direct ? undefined : "Sent to your TikTok drafts — open the TikTok app to finish posting.",
   };
 }

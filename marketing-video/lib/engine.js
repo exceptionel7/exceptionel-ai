@@ -13,6 +13,7 @@
 const scriptGen = require("./script-generator");
 const video = require("./video-providers");
 const db = require("./db");
+const social = require("./social-publishers");
 const { runPipeline } = require("./pipeline");
 
 // Produit de démonstration (si aucun produit n'est fourni).
@@ -153,4 +154,16 @@ function health() {
   };
 }
 
-module.exports = { generateScript, generateVideo, listVideos, heygenAssets, videoStatus, health, DEMO_PRODUCT };
+// Publie une vidéo (déjà rendue, URL publique) sur une plateforme donnée.
+// Sert à tester la publication réelle avec une vraie vidéo MP4.
+async function publishExisting({ videoUrl, caption, platform }) {
+  if (!videoUrl) return { error: "missing video_url" };
+  return social.publish({
+    platform: platform || "tiktok",
+    video: { url: videoUrl },
+    caption: caption || "Exceptionel AI",
+    config: buildConfig(),
+  });
+}
+
+module.exports = { generateScript, generateVideo, listVideos, heygenAssets, videoStatus, health, publishExisting, DEMO_PRODUCT };
