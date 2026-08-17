@@ -1,9 +1,12 @@
 {
   "version": 2,
   "builds": [
-    { "src": "*.html", "use": "@vercel/static" }
+    { "src": "*.html", "use": "@vercel/static" },
+    { "src": "*.txt", "use": "@vercel/static" }
   ],
   "routes": [
+    { "src": "/terms\\.html/tiktok[A-Za-z0-9]+\\.txt", "dest": "/tiktok-verify.txt" },
+    { "src": "/privacy\\.html/tiktok[A-Za-z0-9]+\\.txt", "dest": "/tiktok-verify.txt" },
     { "handle": "filesystem" },
     { "src": "/", "dest": "/index.html" }
   ]
