@@ -6,7 +6,7 @@
   ],
   "routes": [
     { "src": "/terms\\.html/tiktok[A-Za-z0-9]+\\.txt", "dest": "/tiktok-verify.txt" },
-    { "src": "/privacy\\.html/tiktok[A-Za-z0-9]+\\.txt", "dest": "/tiktok-verify.txt" },
+    { "src": "/privacy\\.html/tiktok[A-Za-z0-9]+\\.txt", "dest": "/tiktok-verify-privacy.txt" },
     { "handle": "filesystem" },
     { "src": "/", "dest": "/index.html" }
   ]
